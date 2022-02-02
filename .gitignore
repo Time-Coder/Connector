@@ -1,1 +1,2 @@
-dev
+*.bat
+__pycache__
