@@ -144,11 +144,11 @@ server.queues["news"].get() # you got [0, 1, 2] that client 2 put
 * `client.get_file(src_file_path, dest_file_path = None, block = True)`: Get file from remote computer.
     * `src_file_path`: Remote file path you need to get from remote computer.
     * `dest_file_path`: Local file path you need to put the file at. If it's `None`, it will put file at current working directory.
-    * `block`: If it's `True`, it will block the process until file transfer finished. Otherwise this method will immediately return a `Future` object which you can call `done` method on it to check if transfer is finished. To see more usage of a `Future` object, please refer to section **User Functions Reference**
+    * `block`: If it's `True`, it will block the process until file transfer finished. Otherwise this method will immediately return a `Future` object which you can call `done` method on it to check if transfer is finished. To see more usage of a `Future` object, please refer to [User Functions Reference]()
 * `client.put_file(src_file_path, dest_file_path = None, block = True)`: Put local file to remote computer.
 	* `src_file_path`: Local file path you need to put to remote computer.
 	* `dest_file_path`: Remote computer file path which you need to put file at. If it's `None`, it will put file at remote script working directory.
-	* `block`: If it's `True`, it will block the process until file transfer finished. Otherwise this method will immediately return a `Future` object which you can call `done` method on it to check if transfer is finished. To see more usage of a `Future` object, please refer to section **User Functions Reference**
+	* `block`: If it's `True`, it will block the process until file transfer finished. Otherwise this method will immediately return a `Future` object which you can call `done` method on it to check if transfer is finished. To see more usage of a `Future` object, please refer to [User Functions Reference]()
 * `client.get_folder(src_folder_path, dest_folder_path = None, block = True)`: Get folder from remote computer. The usage is just like `get_file`.
 * `client.put_folder(src_folder_path, dest_folder_path = None, block = True)`: Put local folder to remote computer. The usage is just like `put_file`.
 * `server.put_file_to_all(src_file_path, dest_file_path)`: Put server computer's file `src_file_path` to all connected clients as path `dest_file_path`.
@@ -244,6 +244,9 @@ while True:
 client.close()
 ```
 
+Then you can get this effect:
+![chat room effect](https://github.com/Time-Coder/Connector/blob/master/Figures/chat_room.gif)
+
 ### Time consuming integral
 If you want to get the integral value of a function on an inteval, in a simple way, you can use following code:
 ```python
@@ -265,7 +268,7 @@ if __name__ == '__main__':
     print(integral(f, [0, math.pi]))
 ```
 
-But in above code, `f` is a simple function. But if `f` is a very time consuming function, the time consuming will be multiplied by 1000 for total integral time. We can do it in distributed computing way:
+In above code, `f` is a simple function. But if `f` is a very time consuming function, the time consuming will be multiplied by 1000 for total integral. Naturally, we want multiple computers to calculate function value at the same time. Then we can use **Connector** to get multiple computer work together and do task scheduling easily. Just use following code:
 ```python
 # server side
 import math
@@ -314,3 +317,7 @@ while True:
     except:
         break
 ```
+
+If you just copy this example and test, you will find that use distributed computing way is even slower then before. Because in this example, network communication time delay is larger then calculating $sin(x)$. Only to use distributed computing way when your function is complicated enough.
+
+That's all for **Connector**'s getting start. See more details in [User Functions Reference]().
