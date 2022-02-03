@@ -22,7 +22,6 @@ class Node:
 	_traceback = _NodeBasicMethods._traceback
 	_process__get_session_id = _NodeBasicMethods._process__get_session_id
 	_process_close = _NodeBasicMethods._process_close
-	_processing_request = _NodeBasicMethods._processing_request
 	_send = _NodeBasicMethods._send
 	_send_signal = _NodeBasicMethods._send_signal
 	_request = _NodeBasicMethods._request
@@ -33,7 +32,6 @@ class Node:
 	_make_signal = _NodeBasicMethods._make_signal
 	_recv_signal = _NodeBasicMethods._recv_signal
 	_recv_response = _NodeBasicMethods._recv_response
-	_recv_request = _NodeBasicMethods._recv_request
 	_recving_loop = _NodeBasicMethods._recving_loop
 
 	# local pipes
@@ -187,7 +185,10 @@ class Node:
 
 	@property
 	def is_closed(self):
-		return not self._not_close
+		try:
+			return self._connection._closed
+		except:
+			return True
 
 	@property
 	def address(self):

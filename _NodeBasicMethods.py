@@ -21,6 +21,7 @@ def __init__(self, connection, server = None):
 	# request a new session id use -1
 	# close, write_to_file, close_file use -2
 
+	self._is_Node_init = True
 	self._connection = connection
 
 	self._server = server
@@ -44,12 +45,8 @@ def __init__(self, connection, server = None):
 		self._server_address = server.address
 		
 	self._globals = _NodeInternalClasses.Globals(self)
-	self._not_close = True
-	self._processing_request_thread = None
 	self._recving_thread = None
-	self._cancel_task = {}
 
-	self._recved_requests = _NodeInternalClasses.CloseableQueue()
 	self._recved_responses = _NodeInternalClasses.QueueDict()
 	self._recved_signals = _NodeInternalClasses.QueueDict()
 	
@@ -76,12 +73,14 @@ def close(self):
 		except:
 			pass
 
-		self._not_close = False
-
 		try:
 			self._connection.close()
 		except:
 			pass
+
+		self._connection = None
+		self._address = None
+		self._server_address = None
 
 		try:
 			self._queue.close()
@@ -103,6 +102,7 @@ def close(self):
 				self._actual_queues[key].close()
 			except:
 				pass
+		self._actual_queues.clear()
 
 		for key in self._actual_pipes:
 			try:
@@ -114,16 +114,26 @@ def close(self):
 				self._actual_pipes[key][1].close()
 			except:
 				pass
+		self._actual_pipes.clear()
+
+		for key in self._actual_result_queues_for_future:
+			try:
+				self._actual_result_queues_for_future[key].close()
+			except:
+				pass
+		self._actual_result_queues_for_future.clear()
 
 	else:
-		self._not_close = False
 		try:
 			self._connection.close()
 		except:
 			pass
 
+		self._connection = None
+		
 		try:
-			self._server.disconnect_result[self.address] = self._server._callback_threads_pool.submit(self._server._onDisconnect, self.address)
+			if self.address != None:
+				self._server.disconnect_result[self.address] = self._server._callback_threads_pool.submit(self._server._onDisconnect, self.address)
 		except:
 			pass
 
@@ -131,6 +141,8 @@ def close(self):
 			self._server._connected_nodes.pop(self.address)
 		except:
 			pass
+
+		self._address = None
 
 	if self._simple_threads_pool != None:
 		try:
@@ -146,17 +158,19 @@ def close(self):
 			pass
 		self._complex_threads_pool = None
 
-	self._recved_requests.close()
-	self._recved_signals.clear()
-	self._recved_responses.clear()
+	try:
+		self._recved_signals.clear()
+	except:
+		pass
+
+	try:
+		self._recved_responses.clear()
+	except:
+		pass
 
 def _start(self):
 	self._simple_threads_pool = ThreadPoolExecutor(max_workers=5)
 	self._complex_threads_pool = ThreadPoolExecutor(max_workers=1)
-	if self._processing_request_thread == None or not self._processing_request_thread.is_alive():
-		self._processing_request_thread = threading.Thread(target=self._processing_request, daemon=True)
-		self._processing_request_thread.start()
-
 	if self._recving_thread == None or not self._recving_thread.is_alive():
 		self._recving_thread = threading.Thread(target=self._recving_loop, daemon=True)
 		self._recving_thread.start()
@@ -196,26 +210,7 @@ def _process__get_session_id(self, request):
 def _process_close(self, request):
 	self.close()
 
-def _processing_request(self):
-	while self._not_close:
-		try:
-			request = self._recv_request()
-			if request["type"] == "request":
-				if request["func"] in complex_request:
-					self._complex_threads_pool.submit(eval("self._process_" + request["func"]), request)
-				else:
-					if request["func"] in ["_write_to_file", "_close_file"]:
-						func = eval("self._process_" + request["func"])
-						func(request)
-					else:
-						self._simple_threads_pool.submit(eval("self._process_" + request["func"]), request)
-		except:
-			pass
-
 def _send(self, value):
-	if not self._not_close:
-		raise ConnectionError("Connection is closed.")
-
 	binary = cloudpickle.dumps(value, 3)
 	length = len(binary)
 	self._connection.sendall(length.to_bytes(4, byteorder='little', signed=False) + binary)
@@ -352,14 +347,6 @@ def _recv_response(self, session_id):
 
 	return response
 
-def _recv_request(self):
-	request = self._recved_requests.get()
-
-	if "debug" in request["data"]:
-		print("recved request:", request["data"]["debug"])
-
-	return request
-
 def _recving_loop(self):
 	rear_binary = b''
 	while True:
@@ -367,7 +354,6 @@ def _recving_loop(self):
 			try:
 				rear_binary += self._connection.recv(8192)
 			except:
-				self.close()
 				return
 		var_length = int.from_bytes(rear_binary[:4], byteorder="little", signed=False)
 		var_bytes = rear_binary[4:4+var_length]
@@ -386,7 +372,17 @@ def _recving_loop(self):
 		if isinstance(var, dict) and ("type" in var) and ("session_id" in var):
 			session_id = var["session_id"]
 			if var["type"] == "request":
-				self._recved_requests.put(var)
+				if "debug" in var["data"]:
+					print(var["data"]["debug"])
+
+				if var["func"] in complex_request:
+					self._complex_threads_pool.submit(eval("self._process_" + var["func"]), var)
+				else:
+					if var["func"] in ["_write_to_file", "_close_file"]:
+						func = eval("self._process_" + var["func"])
+						func(var)
+					else:
+						self._simple_threads_pool.submit(eval("self._process_" + var["func"]), var)
 			elif var["type"] == "response":
 				self._recved_responses[session_id].put(var)
 			elif var["type"] == "signal":

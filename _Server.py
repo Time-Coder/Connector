@@ -101,7 +101,8 @@ class Server:
 		try:
 			self._queues.clear()
 
-			for address in self._connected_nodes:
+			keys = self._connected_nodes.keys()
+			for address in keys:
 				try:
 					self._connected_nodes[address].close()
 				except:
@@ -123,7 +124,6 @@ class Server:
 		self._global_vars = {}
 		self._queues = Server.Queues()
 
-		self._continue_accept = False
 		if self._accept_thread != None and self._accept_thread.is_alive():
 			self._accept_thread.join()
 		self._accept_thread = None
@@ -144,12 +144,10 @@ class Server:
 	def clients(self):
 		return self._connected_nodes
 
-	## global queues
 	@property
 	def queues(self):
 		return self._queues
 	
-	## global shared variables
 	def __del__(self):
 		try:
 			self.close()
@@ -267,4 +265,4 @@ class Server:
 				self._connected_nodes[address] = Node(client_socket, self)
 				self.connect_results[address] = self._callback_threads_pool.submit(self._onConnect, self._connected_nodes[address])
 			except BaseException as e:
-				print(e)
+				break

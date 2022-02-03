@@ -8,9 +8,7 @@
 3. Put/Get files/folders to/from different programs on different computers.
 4. RPC (Remote Procedure Call)
 
-Before everything, let's see some exciting examples.
-
-
+Let's see how **Connector** achieve those things.
 
 ## Get connected
 **Connector** works in Client/Server mode. So if you want to communicate between some computers, you should choose one computers work as a server, other computers work as a clients and should connect with server. So you should use following steps to get all computers connected:
@@ -31,11 +29,11 @@ server.clients[('192.168.105.23', 8273)] # to get client whose address is ('192.
 ```
 ***client peer*** means a communication handle on server side that connected with one client.
 
-After that, you got `server` object on server computer and `client` object on each client computer. Let's have a group chat of these computers!
+After that, you got `server` object on server computer and `client` object on each client computer. Let's use **Connector** to communicate with each other!
 
 ## Share/Send variables
 ### via local shared dict
-A client and server use shared variables, just use **local shared dict**. On client side, use `client` just like a normal dict. On server side, use ***client peer*** just like a normal dict. And logically, client side dict and server side dict are one same dict and will always synchronize changes. For example, 
+A client and server can use shared variables, just use **local shared dict**. On client side, use `client` just like a normal dict. On server side, use ***client peer*** just like a normal dict. And logically, client side dict and server side dict are one same dict and will always synchronize changes. For example, 
 ```python
 # client side
 client["var1"] = 256
@@ -185,25 +183,28 @@ server.queues["news"].get() # you got [0, 1, 2] that client 2 put
 	* `block`: If `block` is `True`, it will block process until remote computer call this function finished and return this function calling return value. Otherwise, it will immediately return a `Future` object which you can call `result()` on it to get function calling return value.
 
 ## Examples
+
+Let's see some exciting examples that **Connector** can do.
+
 ### Chat room
-Run following code on server computer:
+If you want to do make a chat room, **Connector** can help a lot. Run following code on server computer:
 ```python
 # server side
 from Connector import *
 
 def on_connect(client):
-	print(client.address, "is in.")
-	while not client.is_closed:
-		content = client.recv()
-		for address in client.server.clients:
-			try:
-				if address != client.address:
-					client.server.clients[address].send({"address": client.address, "content": content})
-			except:
-				pass
+    print(client.address, "is in.")
+    while not client.is_closed:
+        content = client.recv()
+        for address in client.server.clients:
+            try:
+                if address != client.address:
+                    client.server.clients[address].send({"address": client.address, "content": content})
+            except:
+                pass
 
 def on_disconnect(address):
-	print(address, "is out.")
+    print(address, "is out.")
 
 server = Server("192.168.199.210", 1900) # Please input your server computer's real ip
 server.set_connect_callback(on_connect)
@@ -211,7 +212,7 @@ server.set_disconnect_callback(on_disconnect)
 server.hold_on()
 ```
 
-Run following client code on client computer:
+Run following code on each client computer:
 ```python
 # client side
 from Connector import *
@@ -223,22 +224,22 @@ client.connect("192.168.199.210", 1900) # Please input server computer's real ip
 inputer = Inputer()
 
 def recving(client, inputer):
-	while True:
-		try:
-			message = client.recv()
-		except:
-			break
-			
-		inputer.print_before(message["address"], ": ", message["content"], sep="")
+    while True:
+        try:
+            message = client.recv()
+        except:
+            break
+            
+        inputer.print_before(message["address"], ": ", message["content"], sep="")
 
 recving_thread = threading.Thread(target=recving, args=(client, inputer), daemon=True)
 recving_thread.start()
 
 while True:
-	content = inputer.input("Myself: ")
-	if content == "exit":
-		break
-	client.send(content)
+    content = inputer.input("Myself: ")
+    if content == "exit":
+        break
+    client.send(content)
 
 client.close()
 ```
@@ -248,20 +249,20 @@ If you want to get the integral value of a function on an inteval, in a simple w
 ```python
 import math
 def integral(func, inteval):
-	result = 0
-	n = 1000
-	L = inteval[1] - inteval[0]
-	dx = L / n
-	for i in range(n):
-		x = inteval[0] + i/n*L
-		result += dx * func(x)
-	return result
+    result = 0
+    n = 1000
+    L = inteval[1] - inteval[0]
+    dx = L / n
+    for i in range(n):
+        x = inteval[0] + i/n*L
+        result += dx * func(x)
+    return result
 
 def f(x):
-	return math.sin(x)
+    return math.sin(x)
 
 if __name__ == '__main__':
-	print(integral(f, [0, math.pi]))
+    print(integral(f, [0, math.pi]))
 ```
 
 But in above code, `f` is a simple function. But if `f` is a very time consuming function, the time consuming will be multiplied by 1000 for total integral time. We can do it in distributed computing way:
@@ -271,30 +272,30 @@ import math
 from Connector import *
 
 def integral(func, inteval):
-	result = 0
-	n = 1000
-	L = inteval[1] - inteval[0]
-	dx = L / n
+    result = 0
+    n = 1000
+    L = inteval[1] - inteval[0]
+    dx = L / n
 
-	server = Server("192.168.199.210", 1900)
-	server["func"] = func
-	for i in range(n):
-		x = inteval[0] + i/n*L
-		server.queues["task"].put(x)
+    server = Server("192.168.199.210", 1900)
+    server["func"] = func
+    for i in range(n):
+        x = inteval[0] + i/n*L
+        server.queues["task"].put(x)
 
-	while n > 0:
-		result += dx * server.queues["result"].get()
-		n -= 1
+    while n > 0:
+        result += dx * server.queues["result"].get()
+        n -= 1
 
-	server.close()
+    server.close()
 
-	return result
+    return result
 
 def f(x):
-	return math.sin(x)
+    return math.sin(x)
 
 if __name__ == '__main__':
-	print(integral(f, [0, math.pi]))
+    print(integral(f, [0, math.pi]))
 ```
 
 ```python
@@ -306,10 +307,10 @@ client.connect("192.168.199.210", 1900)
 
 f = client.globals["func"]
 while True:
-	try:
-		x = client.globals.queues["task"].get()
-		value = f(x)
-		client.globals.queues["result"].put(value)
-	except:
-		break
+    try:
+        x = client.globals.queues["task"].get()
+        value = f(x)
+        client.globals.queues["result"].put(value)
+    except:
+        break
 ```
