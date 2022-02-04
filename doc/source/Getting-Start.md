@@ -6,9 +6,9 @@ Just use pip command to install **Connector** to your local Python environment:
 ```batch
 pip install tcp-connector
 ```
-And in Python environment, if following import won't throw exception, that means your installation is succeeded.
+PyPI not support name Connector, so on PyPI it's named as **tcp-connector**. But in Python environment, you should import `Connector` instead of `tcp-connector`. After installed, try following code in Python. If this statement won't throw exception, that means your installation is succeeded.
 ```python
->>> import connector
+>>> from Connector import *
 ```
 
 ## Get connected
