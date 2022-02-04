@@ -17,7 +17,7 @@ Welcome to Connector's documentation!
 In addition, You can:
 
 * find source code at: https://github.com/Time-Coder/Connector
-* find PyPI index at: 
+* find PyPI index at: https://pypi.org/project/tcp-connector/
 
 .. toctree::
    :maxdepth: 2

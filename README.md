@@ -10,5 +10,5 @@
 
 In addition, You can:
 
-* find full documentation at: [https://connector.readthedocs.io/en/latest/](https://connector.readthedocs.io/en/latest/)
-* find PyPI index at: 
+* find full documentation at: [https://connector.readthedocs.io/en/latest](https://connector.readthedocs.io/en/latest)
+* find PyPI index at: [https://pypi.org/project/tcp-connector](https://pypi.org/project/tcp-connector)
