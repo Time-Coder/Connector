@@ -4,7 +4,7 @@
 
 Just use pip command to install **Connector** to your local Python environment:
 ```batch
-pip install connector
+pip install tcp-connector
 ```
 And in Python environment, if following import won't throw exception, that means your installation is succeeded.
 ```python
