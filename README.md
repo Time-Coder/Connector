@@ -164,7 +164,7 @@ server.queues["news"].get() # you got [0, 1, 2] that client 2 put
 * `client.execfile(local_script_path, block=True)`: Let remote computer run a local python script.
 	* `local_script_path`: Script file path on local computer.
 	* `block`: If `block` is `True`, it will block process until remote computer run script finished. Otherwise, it will immediately return a `Future` object which you can call `result()` on to wait it finished.
-* `client.exec_remote_file(remote_script_path, block=True)`: Let remote computer run a remote python script. The usage is just like `client.run`.
+* `client.exec_remote_file(remote_script_path, block=True)`: Let remote computer run a remote python script. The usage is just like `client.execfile`.
 * `client.system(cmd, quiet=False, remote_quiet=False, once_all=False, block=True)`: Let remote computer run system command.
 	* `cmd`: System command string need to be call.
 	* `quiet`: If `quiet` is `True`, local side won't print anything of standard output and standard error.
