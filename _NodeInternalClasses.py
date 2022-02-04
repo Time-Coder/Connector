@@ -4,7 +4,9 @@ import sys
 import os
 import ctypes
 import collections
-from CloseableQueue import CloseableQueueFactory
+
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+from _CloseableQueue import CloseableQueueFactory
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _utils import eprint
