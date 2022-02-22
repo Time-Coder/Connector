@@ -2,12 +2,11 @@ import socket
 import threading
 import os
 import sys
-import CloseableQueue
 from concurrent.futures import ThreadPoolExecutor
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _Node import Node
-from _NodeInternalClasses import OrderedDict
+from _NodeInternalClasses import OrderedDict, CloseableQueue
 from _utils import file_size
 
 class Server:
@@ -17,7 +16,7 @@ class Server:
 
 		def __getitem__(self, name):
 			if name not in self._queue_dict:
-				self._queue_dict[name] = CloseableQueue.CloseableQueueFactory()()
+				self._queue_dict[name] = CloseableQueue()
 
 			return self._queue_dict[name]
 
@@ -65,6 +64,7 @@ class Server:
 
 		self._connected_nodes = OrderedDict()
 		self._global_vars = {}
+		self._queue = CloseableQueue()
 		self._queues = Server.Queues()
 
 		self._continue_accept = False
@@ -147,6 +147,10 @@ class Server:
 	@property
 	def queues(self):
 		return self._queues
+
+	@property
+	def globals(self):
+		return self
 	
 	def __del__(self):
 		try:
@@ -187,6 +191,15 @@ class Server:
 	def pop(self, name):
 		return self._global_vars.pop(name)
 
+	def get(self, timeout=None, block=True):
+		return self._queue.get(timeout=timeout, block=block)
+
+	def put(self, value, timeout=None, block=True):
+		self._queue.put(value, timeout=timeout, block=block)
+
+	def qsize(self):
+		return self._queue.qsize()
+
 	def put_file_to_all(self, src_filename, dest_filename = None):
 		if not os.path.isfile(src_filename):
 			raise FileNotFoundError("File " + src_filename + " is not exists.")
@@ -196,7 +209,7 @@ class Server:
 
 		all_clients = self._connected_nodes.keys()
 
-		block_size = 8192
+		block_size = 8192*1024
 		sent_size = 0
 		src_file_size = file_size(src_filename)
 		with open(src_filename, "rb") as file:
@@ -229,7 +242,7 @@ class Server:
 			i -= 1
 
 		all_clients = self._connected_nodes.keys()
-		block_size = 8192
+		block_size = 8192*1024
 		for root, dirs, files in os.walk(src_foldername):
 			for name in files:
 				src_filename = os.path.join(root, name)

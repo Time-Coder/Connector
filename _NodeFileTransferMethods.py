@@ -117,7 +117,7 @@ def _process_get_file(self, request):
 			self._make_signal(session_id)
 			return
 		
-		block_size = 8192
+		block_size = 8192*1024
 		sent_size = 0
 		with open(src_filename, "rb") as file:
 			while sent_size < src_file_size:
@@ -164,7 +164,7 @@ def put_file(self, src_filename, dest_filename = None, block=True):
 			eprint(response["traceback"])
 			raise response["exception"]
 
-		block_size = 8192
+		block_size = 8192*1024
 		sent_size = 0
 		with open(src_filename, "rb") as file:
 			while sent_size < src_file_size:
@@ -341,7 +341,7 @@ def _process_get_folder(self, request):
 				if not response["success"] or response["data"]["same_file"]:
 					continue
 
-				block_size = 8192
+				block_size = 8192*1024
 				sent_size = 0
 				with open(src_filename, "rb") as file:
 					while sent_size < src_file_size:
@@ -427,7 +427,7 @@ def put_folder(self, src_foldername, dest_foldername = None, block = True):
 				if not response["success"] or response["data"]["same_file"]:
 					continue
 
-				block_size = 8192
+				block_size = 8192*1024
 				sent_size = 0
 				with open(src_filename, "rb") as file:
 					while sent_size < src_file_size:

@@ -61,6 +61,7 @@ class Node:
 	# local queues
 	put = _NodeLocalQueuesMethods.put
 	get = _NodeLocalQueuesMethods.get
+	qsize = _NodeLocalQueuesMethods.qsize
 	_locals_queue_put = _NodeLocalQueuesMethods._locals_queue_put
 	_locals_queue_get = _NodeLocalQueuesMethods._locals_queue_get
 	_locals_queue_close = _NodeLocalQueuesMethods._locals_queue_close
@@ -73,6 +74,7 @@ class Node:
 	_locals_queues_clear = _NodeLocalQueuesMethods._locals_queues_clear
 	_process_put = _NodeLocalQueuesMethods._process_put
 	_process_get = _NodeLocalQueuesMethods._process_get
+	_process_qsize = _NodeLocalQueuesMethods._process_qsize
 	_process__locals_queue_put = _NodeLocalQueuesMethods._process__locals_queue_put
 	_process__locals_queue_get = _NodeLocalQueuesMethods._process__locals_queue_get
 	_process__locals_queue_len = _NodeLocalQueuesMethods._process__locals_queue_len
@@ -109,6 +111,9 @@ class Node:
 	_process_pop = _NodeLocalDictMethods._process_pop
 
 	# global queues
+	_globals_get = _NodeGlobalQueuesMethods._globals_get
+	_globals_put = _NodeGlobalQueuesMethods._globals_put
+	_globals_qsize = _NodeGlobalQueuesMethods._globals_qsize
 	_globals_queue_get = _NodeGlobalQueuesMethods._globals_queue_get
 	_globals_queue_put = _NodeGlobalQueuesMethods._globals_queue_put
 	_globals_queue_close = _NodeGlobalQueuesMethods._globals_queue_close
@@ -119,6 +124,9 @@ class Node:
 	_globals_queues_keys = _NodeGlobalQueuesMethods._globals_queues_keys
 	_globals_queues_iter = _NodeGlobalQueuesMethods._globals_queues_iter
 	_globals_queues_clear = _NodeGlobalQueuesMethods._globals_queues_clear
+	_process__globals_get = _NodeGlobalQueuesMethods._process__globals_get
+	_process__globals_put = _NodeGlobalQueuesMethods._process__globals_put
+	_process__globals_qsize = _NodeGlobalQueuesMethods._process__globals_qsize
 	_process__globals_queue_get = _NodeGlobalQueuesMethods._process__globals_queue_get
 	_process__globals_queue_put = _NodeGlobalQueuesMethods._process__globals_queue_put
 	_process__globals_queue_close = _NodeGlobalQueuesMethods._process__globals_queue_close

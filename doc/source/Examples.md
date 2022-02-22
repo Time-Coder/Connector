@@ -11,14 +11,6 @@ from Connector import *
 
 def on_connect(client):
     print(client.address, "is in.")
-    while not client.is_closed:
-        content = client.recv()
-        for address in client.server.clients:
-            try:
-                if address != client.address:
-                    client.server.clients[address].send({"address": client.address, "content": content})
-            except:
-                pass
 
 def on_disconnect(address):
     print(address, "is out.")
@@ -26,7 +18,11 @@ def on_disconnect(address):
 server = Server("192.168.199.210", 1900) # Please input your server computer's real ip
 server.set_connect_callback(on_connect)
 server.set_disconnect_callback(on_disconnect)
-server.hold_on()
+while True:
+    message = server.get()
+    for client in server.clients:
+        if client.address != message["address"]:
+            client.send(message)
 ```
 
 Run following code on each client computer:
@@ -56,7 +52,7 @@ while True:
     content = inputer.input("Myself: ")
     if content == "exit":
         break
-    client.send(content)
+    client.globals.put({"address": client.address, "content": content})
 
 client.close()
 ```

@@ -352,7 +352,7 @@ def _recving_loop(self):
 	while True:
 		while len(rear_binary) < 4:
 			try:
-				rear_binary += self._connection.recv(8192)
+				rear_binary += self._connection.recv(8192*1024)
 			except:
 				return
 		var_length = int.from_bytes(rear_binary[:4], byteorder="little", signed=False)
@@ -362,7 +362,7 @@ def _recving_loop(self):
 			delta_length = var_length - len(var_bytes)
 			while len(rear_binary) < delta_length:
 				try:
-					rear_binary += self._connection.recv(8192)
+					rear_binary += self._connection.recv(8192*1024)
 				except:
 					self.close()
 					return

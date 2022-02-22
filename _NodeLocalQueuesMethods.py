@@ -1,8 +1,9 @@
-import CloseableQueue
 import sys
 import os
+
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _utils import eprint
+from _NodeInternalClasses import CloseableQueue
 
 def put(self, value, timeout=None, block=True):
 	if self._server == None:
@@ -28,15 +29,28 @@ def get(self, timeout=None, block=True):
 			eprint(response["traceback"])
 			raise response["exception"]
 
+def qsize(self):
+	if self._server == None:
+		return self._queue.qsize()
+	else:
+		session_id = self._get_session_id()
+		self._request(session_id)
+		response = self._recv_response(session_id)
+		if response["success"]:
+			return response["data"]["qsize"]
+		else:
+			eprint(response["traceback"])
+			raise response["exception"]
+
 def _locals_queue_put(self, name, value, timeout, block, is_private):
 	if self._server == None:
 		if not is_private:
 			if name not in self._actual_queues:
-				self._actual_queues[name] = CloseableQueue.CloseableQueueFactory()()
+				self._actual_queues[name] = CloseableQueue()
 			self._actual_queues[name].put(value, timeout=timeout, block=block)
 		else:
 			if name not in self._actual_result_queues_for_future:
-				self._actual_result_queues_for_future[name] = CloseableQueue.CloseableQueueFactory()()
+				self._actual_result_queues_for_future[name] = CloseableQueue()
 			self._actual_result_queues_for_future[name].put(value, timeout=timeout, block=block)
 	else:
 		session_id = self._get_session_id()
@@ -50,11 +64,11 @@ def _locals_queue_get(self, name, timeout, block, is_private):
 	if self._server == None:
 		if not is_private:
 			if name not in self._actual_queues:
-				self._actual_queues[name] = CloseableQueue.CloseableQueueFactory()()
+				self._actual_queues[name] = CloseableQueue()
 			return self._actual_queues[name].get(timeout=timeout, block=block)
 		else:
 			if name not in self._actual_result_queues_for_future:
-				self._actual_result_queues_for_future[name] = CloseableQueue.CloseableQueueFactory()()
+				self._actual_result_queues_for_future[name] = CloseableQueue()
 			return self._actual_result_queues_for_future[name].get(timeout=timeout, block=block)
 	else:
 		session_id = self._get_session_id()
@@ -218,17 +232,24 @@ def _process_get(self, request):
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
+def _process_qsize(self, request):
+	try:
+		qsize = self._queue.qsize()
+		self._respond_ok(request["session_id"], qsize=qsize)
+	except BaseException as e:
+		self._respond_exception(request["session_id"], e)
+
 def _process__locals_queue_put(self, request):
 	try:
 		name = request["data"]["name"]
 		if not request["data"]["is_private"]:
 			if name not in self._actual_queues:
-				self._actual_queues[name] = CloseableQueue.CloseableQueueFactory()()
+				self._actual_queues[name] = CloseableQueue()
 
 			self._actual_queues[name].put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
 		else:
 			if name not in self._actual_result_queues_for_future:
-				self._actual_result_queues_for_future[name] = CloseableQueue.CloseableQueueFactory()()
+				self._actual_result_queues_for_future[name] = CloseableQueue()
 
 			self._actual_result_queues_for_future[name].put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
 
@@ -241,12 +262,12 @@ def _process__locals_queue_get(self, request):
 		name = request["data"]["name"]
 		if not request["data"]["is_private"]:
 			if name not in self._actual_queues:
-				self._actual_queues[name] = CloseableQueue.CloseableQueueFactory()()
+				self._actual_queues[name] = CloseableQueue()
 
 			value = self._actual_queues[request["data"]["name"]].get(timeout=request["data"]["timeout"], block=request["block"])
 		else:
 			if name not in self._actual_result_queues_for_future:
-				self._actual_result_queues_for_future[name] = CloseableQueue.CloseableQueueFactory()()
+				self._actual_result_queues_for_future[name] = CloseableQueue()
 
 			value = self._actual_result_queues_for_future[request["data"]["name"]].get(timeout=request["data"]["timeout"], block=request["block"])
 		self._respond_ok(request["session_id"], value=value)

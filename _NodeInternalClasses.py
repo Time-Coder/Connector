@@ -7,8 +7,6 @@ import collections
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _CloseableQueue import CloseableQueueFactory
-
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _utils import eprint
 
 CloseableQueue = CloseableQueueFactory()
@@ -120,6 +118,9 @@ class Queue:
 	def close(self):
 		self._node._locals_queue_close(self._name, is_private=self._is_private)
 
+	def qsize(self):
+		return self._node._locals_queue_len(self._name, is_private=self._is_private)
+
 	def __len__(self):
 		return self._node._locals_queue_len(self._name, is_private=self._is_private)
 
@@ -176,6 +177,9 @@ class Globals:
 
 		def close(self):
 			self._node._globals_queue_close(self._name)
+
+		def qsize(self):
+			return self._node._globals_queue_len(self._name)
 
 		def __len__(self):
 			return self._node._globals_queue_len(self._name)
@@ -253,6 +257,15 @@ class Globals:
 
 	def pop(self, name):
 		return self._node._globals_pop(name)
+
+	def get(self, timeout=None, block=True):
+		return self._node._globals_get(timeout=timeout, block=block)
+
+	def put(self, value, timeout=None, block=True):
+		self._node._globals_put(value, timeout=timeout, block=block)
+
+	def qsize(self):
+		return self._node._globals_qsize()
 
 	@property
 	def queues(self):
