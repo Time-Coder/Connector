@@ -29,6 +29,7 @@ def __init__(self, connection, server = None):
 	self._pipes = _NodeInternalClasses.Pipes(self)
 	self._queues = _NodeInternalClasses.Queues(self)
 	self._result_queues_for_future = _NodeInternalClasses.Queues(self, private=True)
+	self._recved_binary_queue = _NodeInternalClasses.CloseableQueue()
 
 	if self._server == None:
 		self._local_vars = {}
@@ -46,6 +47,7 @@ def __init__(self, connection, server = None):
 		
 	self._globals = _NodeInternalClasses.Globals(self)
 	self._recving_thread = None
+	self._decoding_thread = None
 
 	self._recved_responses = _NodeInternalClasses.QueueDict()
 	self._recved_signals = _NodeInternalClasses.QueueDict()
@@ -84,6 +86,11 @@ def close(self):
 
 		try:
 			self._queue.close()
+		except:
+			pass
+
+		try:
+			self._recved_binary_queue.close()
 		except:
 			pass
 
@@ -171,9 +178,14 @@ def close(self):
 def _start(self):
 	self._simple_threads_pool = ThreadPoolExecutor(max_workers=5)
 	self._complex_threads_pool = ThreadPoolExecutor(max_workers=1)
+
 	if self._recving_thread == None or not self._recving_thread.is_alive():
 		self._recving_thread = threading.Thread(target=self._recving_loop, daemon=True)
 		self._recving_thread.start()
+
+	if self._decoding_thread == None or not self._decoding_thread.is_alive():
+		self._decoding_thread = threading.Thread(target=self._decoding_loop, daemon=True)
+		self._decoding_thread.start()
 
 def _get_session_id(self):
 	if self._server != None:
@@ -348,11 +360,20 @@ def _recv_response(self, session_id):
 	return response
 
 def _recving_loop(self):
-	rear_binary = b''
+	while True:
+		try:
+			recved_binary = self._connection.recv(8192*1024)
+			self._recved_binary_queue.put(recved_binary)
+		except:
+			self.close()
+			return
+
+def _decoding_loop(self):
+	rear_binary = bytearray()
 	while True:
 		while len(rear_binary) < 4:
 			try:
-				rear_binary += self._connection.recv(8192*1024)
+				rear_binary.extend(self._recved_binary_queue.get())
 			except:
 				return
 		var_length = int.from_bytes(rear_binary[:4], byteorder="little", signed=False)
@@ -362,9 +383,8 @@ def _recving_loop(self):
 			delta_length = var_length - len(var_bytes)
 			while len(rear_binary) < delta_length:
 				try:
-					rear_binary += self._connection.recv(8192*1024)
+					rear_binary.extend(self._recved_binary_queue.get())
 				except:
-					self.close()
 					return
 			var_bytes += rear_binary[:delta_length]
 			rear_binary = rear_binary[delta_length:]

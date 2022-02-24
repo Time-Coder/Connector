@@ -33,6 +33,7 @@ class Node:
 	_recv_signal = _NodeBasicMethods._recv_signal
 	_recv_response = _NodeBasicMethods._recv_response
 	_recving_loop = _NodeBasicMethods._recving_loop
+	_decoding_loop = _NodeBasicMethods._decoding_loop
 
 	# local pipes
 	send = _NodeLocalPipesMethods.send
