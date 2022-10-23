@@ -4,12 +4,13 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _Node import Node
+from _utils import get_ip
 
 class Client(Node):
 	def __init__(self, ip = None, port = None):
 		self._is_Node_init = False
 		if ip == None:
-			ip = [a for a in os.popen('route print').readlines() if ' 0.0.0.0 ' in a][0].split()[-2]
+			ip = get_ip()
 		if port == None:
 			port = 0
 

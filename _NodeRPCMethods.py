@@ -135,7 +135,7 @@ def _process_system(self, request):
 					auto_send_buffer.append(byte)
 				auto_send_buffer.stop()
 				process.communicate()
-				self._respond_ok(session_id, end=True, return_value=process.returncode)
+				self._respond_ok(session_id, end=True, return_value=process.returncode, last_one=True)
 				self.__sent_end = True
 				if not request["block"]:
 					self._put_result(session_id, return_value=process.returncode)
@@ -150,7 +150,7 @@ def _process_system(self, request):
 				thread.kill()
 				thread.join()
 				if not self.__sent_end:
-					self._respond_ok(session_id, end=True, return_value=0, block=request["block"])
+					self._respond_ok(session_id, end=True, return_value=0, block=request["block"], last_one=True)
 				if not self.__did_put_result and not request["block"]:
 					self._put_result(session_id, cancel=True)
 			else:
@@ -164,7 +164,7 @@ def _process_system(self, request):
 				if not request["data"]["remote_quiet"]:
 					print(stdout, end="", flush=True)
 
-				self._respond_ok(session_id, stdout=stdout, return_value=process.returncode, block=request["block"])
+				self._respond_ok(session_id, stdout=stdout, return_value=process.returncode, block=request["block"], last_one=True)
 				self._make_signal(session_id)
 
 			thread = Thread(target=session)
@@ -188,7 +188,7 @@ def _process_eval(self, request):
 		def session():
 			try:
 				return_value = eval(request["data"]["statement"])
-				self._respond_ok(session_id, return_value=return_value, block=request["block"])
+				self._respond_ok(session_id, return_value=return_value, block=request["block"], last_one=True)
 			except BaseException as e:
 				self._respond_exception(session_id, e, block=request["block"])
 			self._make_signal(session_id)
@@ -213,7 +213,7 @@ def _process_exec(self, request):
 		def session():
 			try:
 				exec(request["data"]["code"], globals())
-				self._respond_ok(session_id, block=request["block"])
+				self._respond_ok(session_id, block=request["block"], last_one=True)
 			except BaseException as e:
 				self._respond_exception(session_id, e, block=request["block"])
 
@@ -238,7 +238,7 @@ def _process_call(self, request):
 		def session():
 			try:
 				return_value = request["data"]["target"](*request["data"]["args"], **request["data"]["kwargs"])
-				self._respond_ok(session_id, return_value=return_value, block=request["block"])
+				self._respond_ok(session_id, return_value=return_value, block=request["block"], last_one=True)
 			except BaseException as e:
 				self._respond_exception(session_id, e, block=request["block"])
 
@@ -263,7 +263,7 @@ def _process_call_remote(self, request):
 		def session():
 			try:
 				return_value = eval(request["data"]["target"])(*request["data"]["args"], **request["data"]["kwargs"])
-				self._respond_ok(session_id, return_value=return_value, block=request["block"])
+				self._respond_ok(session_id, return_value=return_value, block=request["block"], last_one=True)
 			except BaseException as e:
 				self._respond_exception(session_id, e, block=request["block"])
 
@@ -289,7 +289,7 @@ def _process_exec_remote_file(self, request):
 		def session():
 			try:
 				exec(open(request["data"]["script_name"]).read(), globals())
-				self._respond_ok(session_id, block=request["block"])
+				self._respond_ok(session_id, block=request["block"], last_one=True)
 			except BaseException as e:
 				self._respond_exception(session_id, e, block=request["block"])
 			

@@ -18,7 +18,7 @@ def send(self, value):
 def _process_send(self, request):
 	try:
 		self._pipe[0].send(request["data"]["value"])
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -37,7 +37,7 @@ def recv(self):
 
 def _process_recv(self, request):
 	try:
-		self._respond_ok(request["session_id"], value=self._pipe[0].recv())
+		self._respond_ok(request["session_id"], value=self._pipe[0].recv(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -62,7 +62,7 @@ def _process__locals_pipe_send(self, request):
 			self._actual_pipes[name] = multiprocessing.Pipe()
 
 		self._actual_pipes[name][0].send(request["data"]["value"])
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -88,7 +88,7 @@ def _process__locals_pipe_recv(self, request):
 		if name not in self._actual_pipes:
 			self._actual_pipes[name] = multiprocessing.Pipe()
 
-		self._respond_ok(request["session_id"], value=self._actual_pipes[name][0].recv())
+		self._respond_ok(request["session_id"], value=self._actual_pipes[name][0].recv(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -118,7 +118,7 @@ def _process__locals_pipe_close(self, request):
 	try:
 		name = request["data"]["name"]
 		if name not in self._actual_pipes:
-			self._respond_ok(request["session_id"])
+			self._respond_ok(request["session_id"], last_one=True)
 			return
 
 		try:
@@ -131,7 +131,7 @@ def _process__locals_pipe_close(self, request):
 		except:
 			pass
 
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -163,7 +163,7 @@ def _process__locals_pipes_delitem(self, request):
 	try:
 		name = request["data"]["name"]
 		if name not in self._actual_pipes:
-			self._respond_ok(request["session_id"])
+			self._respond_ok(request["session_id"], last_one=True)
 			return
 
 		try:
@@ -177,7 +177,7 @@ def _process__locals_pipes_delitem(self, request):
 			pass
 
 		del self._actual_pipes[request["data"]["name"]]
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -217,7 +217,7 @@ def _process__locals_pipes_clear(self, request):
 				pass
 
 		self._actual_pipes.clear()
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -236,7 +236,7 @@ def _locals_pipes_len(self):
 
 def _process__locals_pipes_len(self, request):
 	try:
-		self._respond_ok(request["session_id"], len=self._actual_pipes.__len__())
+		self._respond_ok(request["session_id"], len=self._actual_pipes.__len__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -255,7 +255,7 @@ def _locals_pipes_contains(self, name):
 
 def _process__locals_pipes_contains(self, request):
 	try:
-		self._respond_ok(request["session_id"], contains=self._actual_pipes.__contains__(request["data"]["name"]))
+		self._respond_ok(request["session_id"], contains=self._actual_pipes.__contains__(request["data"]["name"]), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -274,7 +274,7 @@ def _locals_pipes_keys(self):
 
 def _process__locals_pipes_keys(self, request):
 	try:
-		self._respond_ok(request["session_id"], keys=self._actual_pipes.keys())
+		self._respond_ok(request["session_id"], keys=self._actual_pipes.keys(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -293,6 +293,6 @@ def _locals_pipes_iter(self):
 
 def _process__locals_pipes_iter(self, request):
 	try:
-		self._respond_ok(request["session_id"], iter=self._actual_pipes.__iter__())
+		self._respond_ok(request["session_id"], iter=self._actual_pipes.__iter__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)

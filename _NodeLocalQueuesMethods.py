@@ -221,21 +221,21 @@ def _locals_queues_clear(self, is_private):
 def _process_put(self, request):
 	try:
 		self._queue.put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process_get(self, request):
 	try:
 		value = self._queue.get(timeout=request["data"]["timeout"], block=request["block"])
-		self._respond_ok(request["session_id"], value=value)
+		self._respond_ok(request["session_id"], value=value, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process_qsize(self, request):
 	try:
 		qsize = self._queue.qsize()
-		self._respond_ok(request["session_id"], qsize=qsize)
+		self._respond_ok(request["session_id"], qsize=qsize, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -253,7 +253,7 @@ def _process__locals_queue_put(self, request):
 
 			self._actual_result_queues_for_future[name].put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
 
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -270,7 +270,7 @@ def _process__locals_queue_get(self, request):
 				self._actual_result_queues_for_future[name] = CloseableQueue()
 
 			value = self._actual_result_queues_for_future[request["data"]["name"]].get(timeout=request["data"]["timeout"], block=request["block"])
-		self._respond_ok(request["session_id"], value=value)
+		self._respond_ok(request["session_id"], value=value, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -278,14 +278,14 @@ def _process__locals_queue_len(self, request):
 	try:
 		if not request["data"]["is_private"]:
 			if request["data"]["name"] not in self._actual_queues:
-				self._respond_ok(request["session_id"], len=0)
+				self._respond_ok(request["session_id"], len=0, last_one=True)
 			else:
-				self._respond_ok(request["session_id"], len=self._actual_queues[request["data"]["name"]].qsize())
+				self._respond_ok(request["session_id"], len=self._actual_queues[request["data"]["name"]].qsize(), last_one=True)
 		else:
 			if request["data"]["name"] not in self._actual_result_queues_for_future:
-				self._respond_ok(request["session_id"], len=0)
+				self._respond_ok(request["session_id"], len=0, last_one=True)
 			else:
-				self._respond_ok(request["session_id"], len=self._actual_result_queues_for_future[request["data"]["name"]].qsize())
+				self._respond_ok(request["session_id"], len=self._actual_result_queues_for_future[request["data"]["name"]].qsize(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -302,7 +302,7 @@ def _process__locals_queue_close(self, request):
 				self._actual_result_queues_for_future[name].close()
 			except:
 				pass
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -322,43 +322,43 @@ def _process__locals_queues_delitem(self, request):
 			except:
 				pass
 			del self._actual_result_queues_for_future[name]
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_len(self, request):
 	try:
 		if not request["data"]["is_private"]:
-			self._respond_ok(request["session_id"], len=self._actual_queues.__len__())
+			self._respond_ok(request["session_id"], len=self._actual_queues.__len__(), last_one=True)
 		else:
-			self._respond_ok(request["session_id"], len=self._actual_result_queues_for_future.__len__())
+			self._respond_ok(request["session_id"], len=self._actual_result_queues_for_future.__len__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_contains(self, request):
 	try:
 		if not request["data"]["is_private"]:
-			self._respond_ok(request["session_id"], contains=self._actual_queues.__contains__(request["data"]["name"]))
+			self._respond_ok(request["session_id"], contains=self._actual_queues.__contains__(request["data"]["name"]), last_one=True)
 		else:
-			self._respond_ok(request["session_id"], contains=self._actual_result_queues_for_future.__contains__(request["data"]["name"]))
+			self._respond_ok(request["session_id"], contains=self._actual_result_queues_for_future.__contains__(request["data"]["name"]), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_keys(self, request):
 	try:
 		if not request["data"]["is_private"]:
-			self._respond_ok(request["session_id"], keys=self._actual_queues.keys())
+			self._respond_ok(request["session_id"], keys=self._actual_queues.keys(), last_one=True)
 		else:
-			self._respond_ok(request["session_id"], keys=self._actual_result_queues_for_future.keys())
+			self._respond_ok(request["session_id"], keys=self._actual_result_queues_for_future.keys(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_iter(self, request):
 	try:
 		if not request["data"]["is_private"]:
-			self._respond_ok(request["session_id"], iter=self._actual_queues.__iter__())
+			self._respond_ok(request["session_id"], iter=self._actual_queues.__iter__(), last_one=True)
 		else:
-			self._respond_ok(request["session_id"], iter=self._actual_result_queues_for_future.__iter__())
+			self._respond_ok(request["session_id"], iter=self._actual_result_queues_for_future.__iter__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -379,6 +379,6 @@ def _process__locals_queues_clear(self, request):
 					pass
 			self._actual_result_queues_for_future.clear()
 
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)

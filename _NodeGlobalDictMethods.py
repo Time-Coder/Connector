@@ -152,69 +152,69 @@ def _globals_clear(self):
 
 def _process__globals_getitem(self, request):
 	try:
-		self._respond_ok(request["session_id"], value=self._server[request["data"]["name"]])
+		self._respond_ok(request["session_id"], value=self._server[request["data"]["name"]], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_setitem(self, request):
 	try:
 		self._server[request["data"]["name"]] = request["data"]["value"]
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_delitem(self, request):
 	try:
 		del self._server[request["data"]["name"]]
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_clear(self, request):
 	try:
 		self._server.clear()
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_keys(self, request):
 	try:
-		self._respond_ok(request["session_id"], keys=self._server.keys())
+		self._respond_ok(request["session_id"], keys=self._server.keys(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_values(self, request):
 	try:
-		self._respond_ok(request["session_id"], values=self._server.values())
+		self._respond_ok(request["session_id"], values=self._server.values(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_items(self, request):
 	try:
-		self._respond_ok(request["session_id"], items=self._server.items())
+		self._respond_ok(request["session_id"], items=self._server.items(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_iter(self, request):
 	try:
-		self._respond_ok(request["session_id"], iter=self._server.__iter__())
+		self._respond_ok(request["session_id"], iter=self._server.__iter__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_contains(self, request):
 	try:
-		self._respond_ok(request["session_id"], contains=self._server.__contains__(request["data"]["name"]))
+		self._respond_ok(request["session_id"], contains=self._server.__contains__(request["data"]["name"]), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_len(self, request):
 	try:
-		self._respond_ok(request["session_id"], len=self._server.__len__())
+		self._respond_ok(request["session_id"], len=self._server.__len__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__globals_pop(self, request):
 	try:
-		self._respond_ok(request["session_id"], value=self._server.pop(request["data"]["name"]))
+		self._respond_ok(request["session_id"], value=self._server.pop(request["data"]["name"]), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)

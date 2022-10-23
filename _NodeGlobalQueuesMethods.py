@@ -20,7 +20,7 @@ def _globals_get(self, timeout=None, block=True):
 def _process__globals_get(self, request):
 	try:
 		value = self._server.get(timeout=request["data"]["timeout"], block=request["block"])
-		self._respond_ok(request["session_id"], value=value)
+		self._respond_ok(request["session_id"], value=value, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -29,7 +29,7 @@ def _globals_put(self, value, timeout=None, block=True):
 		return self._server.put(value, timeout=timeout, block=block)
 	else:
 		session_id = self._get_session_id()
-		self._request(session_id, value=value, timeout=timeout, block=block)
+		self._request(session_id, value=value, timeout=timeout, block=block, last_one=True)
 		response = self._recv_response(session_id)
 
 		if not response["success"]:
@@ -39,7 +39,7 @@ def _globals_put(self, value, timeout=None, block=True):
 def _process__globals_put(self, request):
 	try:
 		self._server.put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -60,7 +60,7 @@ def _globals_qsize(self, timeout=None, block=True):
 def _process__globals_qsize(self, request):
 	try:
 		qsize = self._server.qsize()
-		self._respond_ok(request["session_id"], qsize=qsize)
+		self._respond_ok(request["session_id"], qsize=qsize, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -81,7 +81,7 @@ def _globals_queue_get(self, name, timeout=None, block=True):
 def _process__globals_queue_get(self, request):
 	try:
 		value = self._server.queues[request["data"]["name"]].get(timeout=request["data"]["timeout"], block=request["block"])
-		self._respond_ok(request["session_id"], value=value)
+		self._respond_ok(request["session_id"], value=value, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -100,7 +100,7 @@ def _globals_queue_put(self, name, value, timeout = None, block = True):
 def _process__globals_queue_put(self, request):
 	try:
 		self._server.queues[request["data"]["name"]].put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -124,9 +124,9 @@ def _globals_queue_len(self, name):
 def _process__globals_queue_len(self, request):
 	try:
 		if request["data"]["name"] not in self._server.queues:
-			self._respond_ok(request["session_id"], len=0)
+			self._respond_ok(request["session_id"], len=0, last_one=True)
 		else:
-			self._respond_ok(request["session_id"], len=self._server.queues[request["data"]["name"]].qsize())
+			self._respond_ok(request["session_id"], len=self._server.queues[request["data"]["name"]].qsize(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -156,7 +156,7 @@ def _process__globals_queue_close(self, request):
 				self._server.queues[name].close()
 			except:
 				pass
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -175,7 +175,7 @@ def _globals_queues_delitem(self, name):
 def _process__globals_queues_delitem(self, request):
 	try:
 		del self._server.queues[request["data"]["name"]]
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -195,7 +195,7 @@ def _globals_queues_len(self):
 
 def _process__globals_queues_len(self, request):
 	try:
-		self._respond_ok(request["session_id"], len=self._server.queues.__len__())
+		self._respond_ok(request["session_id"], len=self._server.queues.__len__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -215,7 +215,7 @@ def _globals_queues_contains(self, name):
 
 def _process__globals_queues_contains(self, request):
 	try:
-		self._respond_ok(request["session_id"], contains=self._server.queues.__contains__(request["data"]["name"]))
+		self._respond_ok(request["session_id"], contains=self._server.queues.__contains__(request["data"]["name"]), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -235,7 +235,7 @@ def _globals_queues_keys(self):
 
 def _process__globals_queues_keys(self, request):
 	try:
-		self._respond_ok(request["session_id"], keys=self._server.queues.keys())
+		self._respond_ok(request["session_id"], keys=self._server.queues.keys(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -255,7 +255,7 @@ def _globals_queues_iter(self):
 
 def _process__globals_queues_iter(self, request):
 	try:
-		self._respond_ok(request["session_id"], iter=self._server.queues.__iter__())
+		self._respond_ok(request["session_id"], iter=self._server.queues.__iter__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
@@ -274,6 +274,6 @@ def _globals_queues_clear(self):
 def _process__globals_queues_clear(self, request):
 	try:
 		self._server.queues.clear()
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)

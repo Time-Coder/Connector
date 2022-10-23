@@ -353,6 +353,7 @@ class Future:
 		self._node._stop_send = True
 		self._node._send_signal(self._session_id, cancel=True)
 		self._result = self._node._result_queues_for_future[self._session_id].get()
+		self._node._close_session(self._session_id)
 		self._cancelled = True
 		self._done = True
 		return True
@@ -369,6 +370,7 @@ class Future:
 	def result(self):
 		if self._result == None:
 			self._result = self._node._result_queues_for_future[self._session_id].get()
+			self._node._close_session(self._session_id)
 
 		self._done = True
 		if self._result["success"]:
@@ -380,6 +382,7 @@ class Future:
 	def exception(self):
 		if self._result == None:
 			self._result = self._node._result_queues_for_future[self._session_id].get()
+			self._node._close_session(self._session_id)
 
 		self._done = True
 		return self._result["exception"]
@@ -387,6 +390,7 @@ class Future:
 	def _get_result(self):
 		if self._result == None:
 			self._result = self._node._result_queues_for_future[self._session_id].get()
+			self._node._close_session(self._session_id)
 
 		for func in self._done_callbacks:
 			func(self)

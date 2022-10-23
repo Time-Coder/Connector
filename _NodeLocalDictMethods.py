@@ -152,69 +152,69 @@ def pop(self, name):
 
 def _process___getitem__(self, request):
 	try:
-		self._respond_ok(request["session_id"], value=self._local_vars[request["data"]["name"]])
+		self._respond_ok(request["session_id"], value=self._local_vars[request["data"]["name"]], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process___setitem__(self, request):
 	try:
 		self._local_vars[request["data"]["name"]] = request["data"]["value"]
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process___delitem__(self, request):
 	try:
 		del self._local_vars[request["data"]["name"]]
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process___iter__(self, request):
 	try:
-		self._respond_ok(request["session_id"], iter=self._local_vars.__iter__())
+		self._respond_ok(request["session_id"], iter=self._local_vars.__iter__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process___contains__(self, request):
 	try:
-		self._respond_ok(request["session_id"], contains=self._local_vars.__contains__(request["data"]["name"]))
+		self._respond_ok(request["session_id"], contains=self._local_vars.__contains__(request["data"]["name"]), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process___len__(self, request):
 	try:
-		self._respond_ok(request["session_id"], len=self._local_vars.__len__())
+		self._respond_ok(request["session_id"], len=self._local_vars.__len__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process_clear(self, request):
 	try:
 		self._local_vars.clear()
-		self._respond_ok(request["session_id"])
+		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process_keys(self, request):
 	try:
-		self._respond_ok(request["session_id"], keys=self._local_vars.keys())
+		self._respond_ok(request["session_id"], keys=self._local_vars.keys(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process_values(self, request):
 	try:
-		self._respond_ok(request["session_id"], values=self._local_vars.values())
+		self._respond_ok(request["session_id"], values=self._local_vars.values(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process_items(self, request):
 	try:
-		self._respond_ok(request["session_id"], items=self._local_vars.items())
+		self._respond_ok(request["session_id"], items=self._local_vars.items(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process_pop(self, request):
 	try:
-		self._respond_ok(request["session_id"], value=self._local_vars.pop(request["data"]["name"]))
+		self._respond_ok(request["session_id"], value=self._local_vars.pop(request["data"]["name"]), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)

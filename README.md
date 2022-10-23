@@ -12,3 +12,12 @@ In addition, You can:
 
 * find full documentation at: [https://connector.readthedocs.io/en/latest](https://connector.readthedocs.io/en/latest)
 * find PyPI index at: [https://pypi.org/project/tcp-connector](https://pypi.org/project/tcp-connector)
+
+## Release Note
+### 0.0.5
+* Support finding default IP on Linux by introducing `netifaces` module;
+* Support sending lambda function by changing module `cloudpick` to `dill`;
+* Use uuid for session id;
+* Remove unneeded queue after a session finished.
+### 0.0.4
+* First stable release

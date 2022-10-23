@@ -98,7 +98,7 @@ def _process_get_file(self, request):
 		try:
 			file = open(src_filename, "rb")
 			file.close()
-			self._respond_ok(session_id, same_file=same_file, file_size=src_file_size)
+			self._respond_ok(session_id, same_file=same_file, file_size=src_file_size, last_one=same_file)
 		except BaseException as e:
 			self._respond_exception(session_id, e, same_file=same_file, block=request["block"])
 			self._make_signal(session_id)
@@ -122,9 +122,9 @@ def _process_get_file(self, request):
 		with open(src_filename, "rb") as file:
 			while sent_size < src_file_size:
 				data = file.read(block_size)
-				self._respond_ok(session_id, data=data)
 				sent_size += len(data)
-
+				self._respond_ok(session_id, data=data, last_one=(sent_size==src_file_size))
+				
 		if not request["block"]:
 			self._put_result(session_id)
 
@@ -136,7 +136,7 @@ def _process_get_file(self, request):
 	if signal["cancel"] and thread.is_alive():
 		thread.kill()
 		thread.join()
-		self._respond_ok(session_id, cancel=True)
+		self._respond_ok(session_id, cancel=True, last_one=True)
 		self._put_result(session_id, cancelled=True)
 	else:
 		thread.join()
@@ -171,9 +171,9 @@ def put_file(self, src_filename, dest_filename = None, block=True):
 				if self._stop_send:
 					break
 				data = file.read(block_size)
-				self._respond_ok(session_id, data=data)
 				sent_size += len(data)
-
+				self._respond_ok(session_id, data=data, last_one=(sent_size==src_file_size))
+				
 	if block:
 		session()
 	else:
@@ -189,7 +189,7 @@ def _process_put_file(self, request):
 
 		if full_size == file_size(dest_filename) and \
 		   request["data"]["md5"] == md5(dest_filename):
-			self._respond_ok(session_id, same_file=True, block=request["block"])
+			self._respond_ok(session_id, same_file=True, block=request["block"], last_one=True)
 			self._make_signal(session_id)
 			return
 		
@@ -224,7 +224,7 @@ def _process_put_file(self, request):
 	if signal["cancel"] and thread.is_alive():
 		thread.kill()
 		thread.join()
-		self._respond_ok(session_id, cancel=True)
+		self._respond_ok(session_id, cancel=True, last_one=True)
 		self._put_result(session_id, cancelled=True)
 	else:
 		thread.join()
@@ -268,13 +268,13 @@ def get_folder(self, src_foldername, dest_foldername = None, block=True):
 				         response["data"]["md5"] == md5(dest_filename))
 
 			if same_file:
-				self._respond_ok(session_id, same_file = same_file)
+				self._respond_ok(session_id, same_file=same_file)
 				# self._respond_ok(session_id, same_file = same_file, debug="Already have file: " + dest_filename)
 				continue
 			else:
 				try:
 					file = open(dest_filename, "wb")
-					self._respond_ok(session_id, same_file = same_file)
+					self._respond_ok(session_id, same_file=same_file)
 					# self._respond_ok(session_id, same_file = same_file, debug="I don't have this file, please send me.")
 					file.close()
 				except BaseException as e:
@@ -350,7 +350,7 @@ def _process_get_folder(self, request):
 						# self._respond_ok(session_id, data=data, debug="Please write " + str(len(data)) + " bytes data to file " + relative_file_name)
 						sent_size += len(data)
 
-		self._respond_ok(session_id, finished=True)
+		self._respond_ok(session_id, finished=True, last_one=True)
 		# self._respond_ok(session_id, finished=True, debug="Sent all files.")
 
 		if not request["block"]:
@@ -364,7 +364,7 @@ def _process_get_folder(self, request):
 	if signal["cancel"] and thread.is_alive():
 		thread.kill()
 		thread.join()
-		self._respond_ok(session_id, cancel=True)
+		self._respond_ok(session_id, cancel=True, last_one=True)
 		# self._respond_ok(session_id, cancel=True, debug="Cancel.")
 		self._put_result(session_id, cancelled=True)
 	else:
@@ -438,7 +438,7 @@ def put_folder(self, src_foldername, dest_foldername = None, block = True):
 						# self._respond_ok(session_id, data=data, debug="Please write " + str(len(data)) + " bytes to file " + relative_file_name)
 						sent_size += len(data)
 
-		self._respond_ok(session_id, finished=True)
+		self._respond_ok(session_id, finished=True, last_one=True)
 		# self._respond_ok(session_id, finished=True, debug="Sent all files.")
 
 	if block:
@@ -487,13 +487,13 @@ def _process_put_folder(self, request):
 				         response["data"]["md5"] == md5(dest_filename))
 
 			if same_file:
-				self._respond_ok(session_id, same_file = same_file)
+				self._respond_ok(session_id, same_file=same_file)
 				# self._respond_ok(session_id, same_file = same_file, debug="Already have file " + dest_filename)
 				continue
 			else:
 				try:
 					file = open(dest_filename, "wb")
-					self._respond_ok(session_id, same_file = same_file)
+					self._respond_ok(session_id, same_file=same_file)
 					# self._respond_ok(session_id, same_file = same_file, debug="I don't have this file, please send me.")
 					file.close()
 				except BaseException as e:
@@ -521,8 +521,8 @@ def _process_put_folder(self, request):
 	if signal["cancel"] and thread.is_alive():
 		thread.kill()
 		thread.join()
-		self._respond_ok(session_id, cancel=True)
+		self._respond_ok(session_id, cancel=True, last_one=True)
 		# self._respond_ok(session_id, cancel=True, debug="Cancel.")
 		self._put_result(session_id, cancelled=True)
 	else:
-		thread.join()	
+		thread.join()

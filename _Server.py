@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _Node import Node
 from _NodeInternalClasses import OrderedDict, CloseableQueue
-from _utils import file_size
+from _utils import file_size, get_ip
 
 class Server:
 	class Queues:
@@ -85,9 +85,10 @@ class Server:
 		self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 		if ip == None:
-			ip = [a for a in os.popen('route print').readlines() if ' 0.0.0.0 ' in a][0].split()[-2]
+			ip = get_ip()
 		if port == None:
 			port = 0
+
 		self._connection.bind((ip, port))
 		self._connection.listen(5)
 		

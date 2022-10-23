@@ -20,7 +20,6 @@ class Node:
 	_start = _NodeBasicMethods._start
 	_get_session_id = _NodeBasicMethods._get_session_id
 	_traceback = _NodeBasicMethods._traceback
-	_process__get_session_id = _NodeBasicMethods._process__get_session_id
 	_process_close = _NodeBasicMethods._process_close
 	_send = _NodeBasicMethods._send
 	_send_signal = _NodeBasicMethods._send_signal
@@ -34,6 +33,7 @@ class Node:
 	_recv_response = _NodeBasicMethods._recv_response
 	_recving_loop = _NodeBasicMethods._recving_loop
 	_decoding_loop = _NodeBasicMethods._decoding_loop
+	_close_session = _NodeBasicMethods._close_session
 
 	# local pipes
 	send = _NodeLocalPipesMethods.send

@@ -1,10 +1,10 @@
 import threading
-import cloudpickle
-import pickle
+import dill
 import multiprocessing
 import sys
 import os
 import traceback
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
@@ -19,7 +19,7 @@ complex_request = ["get_file", "put_file",
 def __init__(self, connection, server = None):
 	# session id:
 	# request a new session id use -1
-	# close, write_to_file, close_file use -2
+	# close, write_to_file, close_file, put back session id use -2
 
 	self._is_Node_init = True
 	self._connection = connection
@@ -41,7 +41,6 @@ def __init__(self, connection, server = None):
 		self._address = self._connection.getsockname()
 		self._server_address = self._connection.getpeername()
 	else:
-		self._next_session_id = 0
 		self._address = self._connection.getpeername()
 		self._server_address = server.address
 		
@@ -188,16 +187,19 @@ def _start(self):
 		self._decoding_thread.start()
 
 def _get_session_id(self):
-	if self._server != None:
-		session_id = self._next_session_id
-		self._next_session_id += 1
-		if self._next_session_id >= 1024:
-			self._next_session_id = 0
-		return session_id
-	else:
-		self._request(session_id=-1)
-		response = self._recv_response(session_id=-1)
-		return response["data"]["target_session_id"]
+	return str(uuid.uuid1())
+
+def _close_session(self, sid):	
+	if sid in self._recved_signals:
+		del self._recved_signals[sid]
+
+	if sid in self._recved_responses:
+		del self._recved_responses[sid]
+
+	if self._server == None:
+		if sid in self._actual_result_queues_for_future:
+			self._actual_result_queues_for_future[sid].close()
+			del self._actual_result_queues_for_future[sid]
 
 def _traceback(self, remote=True):
 	exception_list = traceback.format_stack()
@@ -213,17 +215,11 @@ def _traceback(self, remote=True):
 
 	return exception_str
 
-def _process__get_session_id(self, request):
-	self._respond_ok(session_id=-1, target_session_id=self._next_session_id)
-	self._next_session_id += 1
-	if self._next_session_id >= 1024:
-		self._next_session_id = 0
-
 def _process_close(self, request):
 	self.close()
 
 def _send(self, value):
-	binary = cloudpickle.dumps(value, 3)
+	binary = dill.dumps(value, 3)
 	length = len(binary)
 	self._connection.sendall(length.to_bytes(4, byteorder='little', signed=False) + binary)
 
@@ -272,6 +268,10 @@ def _respond_ok(self, session_id, **kwargs):
 	if "cancel" in kwargs:
 		cancel = kwargs.pop("cancel")
 
+	last_one = False
+	if "last_one" in kwargs:
+		last_one = kwargs.pop("last_one")
+
 	if "debug" in kwargs:
 		print("respond:", kwargs["debug"], flush=True)
 
@@ -282,9 +282,12 @@ def _respond_ok(self, session_id, **kwargs):
 			"type": "response",
 			"success": (not cancel),
 			"cancel": cancel,
+			"last_one": last_one,
 			"data": kwargs
 		}
 		self._send(response)
+		if last_one:
+			self._close_session(session_id)
 	else:
 		self._put_result(session_id, **kwargs)
 
@@ -304,9 +307,11 @@ def _respond_exception(self, session_id, exception, **kwargs):
 			"success": False,
 			"exception": exception,
 			"traceback": self._traceback(),
+			"last_one": True,
 			"data": kwargs
 		}
 		self._send(response)
+		self._close_session(session_id)
 	else:
 		self._put_exception(session_id, exception, **kwargs)
 
@@ -357,6 +362,9 @@ def _recv_response(self, session_id):
 	if "debug" in response["data"]:
 		print("recved response:", response["data"]["debug"])
 
+	if response["last_one"]:
+		self._close_session(session_id)
+
 	return response
 
 def _recving_loop(self):
@@ -388,7 +396,7 @@ def _decoding_loop(self):
 					return
 			var_bytes += rear_binary[:delta_length]
 			rear_binary = rear_binary[delta_length:]
-		var = pickle.loads(var_bytes)
+		var = dill.loads(var_bytes)
 		if isinstance(var, dict) and ("type" in var) and ("session_id" in var):
 			session_id = var["session_id"]
 			if var["type"] == "request":

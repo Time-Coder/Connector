@@ -2,6 +2,14 @@ from __future__ import print_function
 import hashlib
 import sys
 import os
+from netifaces import interfaces, ifaddresses, AF_INET
+
+def get_ip():
+    for interface in interfaces():
+        for i in ifaddresses(interface).setdefault(AF_INET, [{'addr': ''}]):
+            if i['addr'] not in ['127.0.0.1', '']:
+                return i['addr']
+    return '127.0.0.1'
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
