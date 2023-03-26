@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _utils import eprint
 
 def __getitem__(self, name):
-	if self._server == None:
+	if self._parent is None:
 		return self._local_vars[name]
 	else:
 		session_id = self._get_session_id()
@@ -17,7 +17,7 @@ def __getitem__(self, name):
 			raise response["exception"]
 
 def __setitem__(self, name, value):
-	if self._server == None:
+	if self._parent is None:
 		self._local_vars[name] = value
 	else:
 		session_id = self._get_session_id()
@@ -28,7 +28,7 @@ def __setitem__(self, name, value):
 			raise response["exception"]
 
 def __delitem__(self, name):
-	if self._server == None:
+	if self._parent is None:
 		del self._local_vars[name]
 	else:
 		session_id = self._get_session_id()
@@ -39,7 +39,7 @@ def __delitem__(self, name):
 			raise response["exception"]
 
 def __iter__(self):
-	if self._server == None:
+	if self._parent is None:
 		return self._local_vars.__iter__()
 	else:
 		session_id = self._get_session_id()
@@ -52,7 +52,7 @@ def __iter__(self):
 			raise response["exception"]
 
 def __contains__(self, name):
-	if self._server == None:
+	if self._parent is None:
 		return self._local_vars.__contains__(name)
 	else:
 		session_id = self._get_session_id()
@@ -65,7 +65,7 @@ def __contains__(self, name):
 			raise response["exception"]
 
 def __len__(self):
-	if self._server == None:
+	if self._parent is None:
 		return self._local_vars.__len__()
 	else:
 		session_id = self._get_session_id()
@@ -78,7 +78,7 @@ def __len__(self):
 			raise response["exception"]
 
 def clear(self):
-	if self._server == None:
+	if self._parent is None:
 		self._local_vars.clear()
 	else:
 		session_id = self._get_session_id()
@@ -91,7 +91,7 @@ def clear(self):
 			raise response["exception"]
 
 def keys(self):
-	if self._server == None:
+	if self._parent is None:
 		return self._local_vars.keys()
 	else:
 		session_id = self._get_session_id()
@@ -106,7 +106,7 @@ def keys(self):
 			raise response["exception"]
 
 def values(self):
-	if self._server == None:
+	if self._parent is None:
 		return self._local_vars.values()
 	else:
 		session_id = self._get_session_id()
@@ -121,7 +121,7 @@ def values(self):
 			raise response["exception"]
 
 def items(self):
-	if self._server == None:
+	if self._parent is None:
 		return self._local_vars.items()
 	else:
 		session_id = self._get_session_id()
@@ -136,7 +136,7 @@ def items(self):
 			raise response["exception"]
 
 def pop(self, name):
-	if self._server == None:
+	if self._parent is None:
 		return self._local_vars.pop(name)
 	else:
 		session_id = self._get_session_id()

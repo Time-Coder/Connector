@@ -5,53 +5,87 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-from ._Node import Node
-from ._NodeInternalClasses import OrderedDict, QueueDict
-from ._CloseableQueue import CloseableQueue
-from ._utils import file_size, get_ip
+from _Node import Node
+from _NodeInternalClasses import OrderedDict
+from _utils import file_size, get_ip
 
-class Server:
+class Peer(Node):
 	def __init__(self, ip = None, port = None):
 		self.connect_results = OrderedDict()
 		self.disconnect_results = OrderedDict()
 		self._callback_threads_pool = ThreadPoolExecutor(max_workers=5)
 
 		self._on_connected = lambda client : None
-		self._on_disconnected = lambda address : None
+		self._on_disconnect = lambda address : None
 
 		self._connected_nodes = OrderedDict()
-		self._global_vars = {}
-		self._queue = CloseableQueue()
-		self._queues = QueueDict()
 
 		self._continue_accept = False
 		self._accept_thread = None
-		
-		self.start(ip, port)
-
-	def set_connect_callback(self, func):
-		self._on_connected = func
-
-	def set_disconnect_callback(self, func):
-		self._on_disconnected = func
-
-	def start(self, ip=None, port=None):
-		if self._continue_accept:
-			return
-
-		self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 		if ip is None:
 			ip = get_ip()
 		if port is None:
 			port = 0
 
-		self._connection.bind((ip, port))
-		self._connection.listen(5)
+		self._ip = ip
+		self._port = port
+
+		self._connection1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self._connection1.bind((ip, 0))
+		Node.__init__(self, self._connection1)
+
+		self.start()
+
+	@property
+	def address(self):
+		try:
+			return self._connection2.getsockname()
+		except:
+			return None
+		
+	def set_connected_callback(self, func):
+		self._on_connected = func
+
+	def set_disconnected_callback(self, func):
+		self._on_disconnected = func
+
+	def connect(self, ip, port = None):
+		server_address = ip
+		if port is not None:
+			server_address = (ip, port)
+
+		if self._connection1 is None:
+			self._connection1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			self._connection1.bind((self._ip, 0))
+
+		self._connection1.connect(server_address)
+		Node._start(self)
+
+	def start(self, ip=None, port=None):
+		if self._continue_accept:
+			return
+
+		if ip is None:
+			ip = self._ip
+		if port is None:
+			port = self._port
+
+		if ip is None:
+			ip = get_ip()
+		if port is None:
+			port = 0
+
+		self._ip = ip
+		self._port = port
+
+		self._connection2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self._connection2.bind((self._ip, self._port))
+		self._connection2.listen(5)
 		
 		self._continue_accept = True
 		if self._accept_thread is None or not self._accept_thread.is_alive():
-			self._accept_thread = threading.Thread(target=self._start, daemon=True)
+			self._accept_thread = threading.Thread(target=self._accepting_loop, daemon=True)
 			self._accept_thread.start()
 
 	def close(self):
@@ -69,94 +103,34 @@ class Server:
 
 		self._connected_nodes = OrderedDict()
 
-		try:
-			self._queues.clear()
-		except:
-			pass
-
-		try:
-			self._connection.close()
-		except:
-			pass
-		
 		self.connect_results = OrderedDict()
 		self.disconnect_results = OrderedDict()
 		self._callback_threads_pool.shutdown()
 		self._callback_threads_pool = ThreadPoolExecutor(max_workers=5)
 
-		self._global_vars = {}
-		self._queues = QueueDict()
-
 		if self._accept_thread is not None and self._accept_thread.is_alive():
 			self._accept_thread.join()
 		self._accept_thread = None
 
-	@property	
-	def address(self):
 		try:
-			return self._connection.getsockname()
+			Node.close(self)
 		except:
-			return None
+			pass
 
-	@property
-	def is_closed(self):
-		return not self._continue_accept
+		try:
+			self._connection2.close()
+		except:
+			pass
 
 	@property
 	def clients(self):
 		return self._connected_nodes
-
-	@property
-	def queues(self):
-		return self._queues
 	
 	def __del__(self):
 		try:
 			self.close()
 		except:
 			pass
-
-	def __getitem__(self, name):
-		return self._global_vars[name]
-
-	def __setitem__(self, name, value):
-		self._global_vars[name] = value
-
-	def __delitem__(self, name):
-		del self._global_vars[name]
-
-	def __iter__(self):
-		return self._global_vars.__iter__()
-
-	def __len__(self):
-		return self._global_vars.__len__()
-
-	def __contains__(self, name):
-		return self._global_vars.__contains__(name)
-
-	def keys(self):
-		return self._global_vars.keys()
-
-	def values(self):
-		return self._global_vars.values()
-
-	def items(self):
-		return self._global_vars.items()
-
-	def clear(self):
-		self._global_vars.clear()
-
-	def pop(self, name):
-		return self._global_vars.pop(name)
-
-	def get(self, timeout=None, block=True):
-		return self._queue.get(timeout=timeout, block=block)
-
-	def put(self, value, timeout=None, block=True):
-		self._queue.put(value, timeout=timeout, block=block)
-
-	def qsize(self):
-		return self._queue.qsize()
 
 	def put_file_to(self, src_filename, address_file_map):
 		if not os.path.isfile(src_filename):
@@ -219,10 +193,10 @@ class Server:
 	def hold_on(self):
 		threading.Event().wait()
 
-	def _start(self):
+	def _accepting_loop(self):
 		while self._continue_accept:
 			try:
-				client_socket, address = self._connection.accept()
+				client_socket, address = self._connection2.accept()
 				node = Node(client_socket, self)
 				node._start()
 				self._connected_nodes[address] = node

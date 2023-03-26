@@ -6,10 +6,9 @@ import ctypes
 import collections
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-from _CloseableQueue import CloseableQueueFactory
+from _CloseableQueue import CloseableQueue
+from _CloseablePipe import CloseablePipe
 from _utils import eprint
-
-CloseableQueue = CloseableQueueFactory()
 
 class OrderedDict(collections.OrderedDict):
 	def __init__(self, **kwargs):
@@ -39,8 +38,17 @@ class QueueDict(dict):
 
 	def __getitem__(self, name):
 		if not dict.__contains__(self, name):
-			dict.__setitem__(self, name, CloseableQueue())
+			new_queue = CloseableQueue()
+			dict.__setitem__(self, name, new_queue)
 		return dict.__getitem__(self, name)
+
+	def __delitem__(self, name):
+		if dict.__contains__(self, name):
+			try:
+				self[name].close()
+			except:
+				pass
+			dict.__delitem__(self, name)
 
 	def clear(self):
 		for name in self:
@@ -48,6 +56,43 @@ class QueueDict(dict):
 				self[name].close()
 			except:
 				pass
+		dict.clear(self)
+
+class PipeDict(dict):
+	def __init__(self):
+		dict.__init__(self)
+
+	def __getitem__(self, name):
+		if not dict.__contains__(self, name):
+			dict.__setitem__(self, name, CloseablePipe())
+		return dict.__getitem__(self, name)
+
+	def __delitem__(self, name):
+		if dict.__contains__(self, name):
+			try:
+				self[name][0].close()
+			except:
+				pass
+
+			try:
+				self[name][1].close()
+			except:
+				pass
+
+			dict.__delitem__(self, name)
+
+	def clear(self):
+		for name in self:
+			try:
+				self[name][0].close()
+			except:
+				pass
+
+			try:
+				self[name][1].close()
+			except:
+				pass
+
 		dict.clear(self)
 
 class Pipe:
@@ -60,9 +105,6 @@ class Pipe:
 
 	def recv(self):
 		return self._node._locals_pipe_recv(self._name)
-
-	def close(self):
-		return self._node._locals_pipe_close(self._name)
 
 class Pipes:
 	def __init__(self, node):
@@ -115,9 +157,6 @@ class Queue:
 	def put(self, value, timeout = None, block = True):
 		self._node._locals_queue_put(self._name, value, timeout=timeout, block=block, is_private=self._is_private)
 
-	def close(self):
-		self._node._locals_queue_close(self._name, is_private=self._is_private)
-
 	def qsize(self):
 		return self._node._locals_queue_len(self._name, is_private=self._is_private)
 
@@ -163,45 +202,42 @@ class Queues:
 	def clear(self):
 		self._node._locals_queues_clear(is_private=self._is_private)
 
-class Globals:
+class ServerPeer:
 	class Queue:
 		def __init__(self, node, name):
 			self._node = node
 			self._name = name
 
 		def get(self, timeout = None, block = True):
-			return self._node._globals_queue_get(self._name, timeout=timeout, block=block)
+			return self._node._server_queue_get(self._name, timeout=timeout, block=block)
 
 		def put(self, value, timeout = None, block = True):
-			self._node._globals_queue_put(self._name, value, timeout=timeout, block=block)
-
-		def close(self):
-			self._node._globals_queue_close(self._name)
+			self._node._server_queue_put(self._name, value, timeout=timeout, block=block)
 
 		def qsize(self):
-			return self._node._globals_queue_len(self._name)
+			return self._node._server_queue_len(self._name)
 
 		def __len__(self):
-			return self._node._globals_queue_len(self._name)
+			return self._node._server_queue_len(self._name)
 
 	class Queues:
 		def __init__(self, node):
 			self._node = node
 
 		def __getitem__(self, name):
-			return Globals.Queue(self._node, name)
+			return ServerPeer.Queue(self._node, name)
 
 		def __delitem__(self, name):
-			self._node._globals_queues_delitem(name)
+			self._node._server_queues_delitem(name)
 
 		def __len__(self):
-			return self._node._globals_queues_len()
+			return self._node._server_queues_len()
 
 		def __contains__(self, name):
-			return self._node._globals_queues_contains(name)
+			return self._node._server_queues_contains(name)
 
 		def keys(self):
-			return self._node._globals_queues_keys()
+			return self._node._server_queues_keys()
 
 		def values(self):
 			values = []
@@ -216,60 +252,67 @@ class Globals:
 			return items
 
 		def __iter__(self):
-			return self._node._globals_queues_iter()
+			return self._node._server_queues_iter()
 
 		def clear(self):
-			self._node._globals_queues_clear()
+			self._node._server_queues_clear()
 
 	def __init__(self, node):
 		self._node = node
-		self._queues = Globals.Queues(node)
+		self._queues = ServerPeer.Queues(node)
 
 	def __setitem__(self, name, value):
-		self._node._globals_setitem(name, value)
+		self._node._server_setitem(name, value)
 
 	def __getitem__(self, name):
-		return self._node._globals_getitem(name)
+		return self._node._server_getitem(name)
 
 	def __delitem__(self, name):
-		return self._node._globals_delitem(name)
+		return self._node._server_delitem(name)
 
 	def __iter__(self):
-		return self._node._globals_iter()
+		return self._node._server_iter()
 
 	def __contains__(self, name):
-		return self._node._globals_contains(name)
+		return self._node._server_contains(name)
 
 	def __len__(self):
-		return self._node._globals_len()
+		return self._node._server_len()
 
 	def clear(self):
-		self._node._globals_clear()
+		self._node._server_clear()
 
 	def keys(self):
-		return self._node._globals_keys()
+		return self._node._server_keys()
 
 	def values(self):
-		return self._node._globals_values()
+		return self._node._server_values()
 
 	def items(self):
-		return self._node._globals_items()
+		return self._node._server_items()
 
 	def pop(self, name):
-		return self._node._globals_pop(name)
+		return self._node._server_pop(name)
 
 	def get(self, timeout=None, block=True):
-		return self._node._globals_get(timeout=timeout, block=block)
+		return self._node._server_get(timeout=timeout, block=block)
 
 	def put(self, value, timeout=None, block=True):
-		self._node._globals_put(value, timeout=timeout, block=block)
+		self._node._server_put(value, timeout=timeout, block=block)
 
 	def qsize(self):
-		return self._node._globals_qsize()
+		return self._node._server_qsize()
 
 	@property
 	def queues(self):
 		return self._queues
+
+	@property
+	def address(self):
+		try:
+			return self._node._connection.getpeername()
+		except:
+			return None
 
 class AutoSendBuffer:
 	def __init__(self, node, session_id, timeout=0.1, quiet=False):
@@ -362,13 +405,13 @@ class Future:
 		return self._cancelled
 
 	def done(self):
-		if self._done != None:
+		if self._done is not None:
 			return self._done
 		else:
 			return (len(self._node._result_queues_for_future[self._session_id]) != 0)
 
 	def result(self):
-		if self._result == None:
+		if self._result is None:
 			self._result = self._node._result_queues_for_future[self._session_id].get()
 			self._node._close_session(self._session_id)
 
@@ -380,7 +423,7 @@ class Future:
 			raise self._result["exception"]
 
 	def exception(self):
-		if self._result == None:
+		if self._result is None:
 			self._result = self._node._result_queues_for_future[self._session_id].get()
 			self._node._close_session(self._session_id)
 
@@ -388,7 +431,7 @@ class Future:
 		return self._result["exception"]
 
 	def _get_result(self):
-		if self._result == None:
+		if self._result is None:
 			self._result = self._node._result_queues_for_future[self._session_id].get()
 			self._node._close_session(self._session_id)
 
@@ -398,7 +441,7 @@ class Future:
 	def add_done_callback(self, func):
 		self._done_callbacks.append(func)
 		
-		if self._monitor_done_thread == None:
+		if self._monitor_done_thread is None:
 			self._monitor_done_thread = threading.Thread(target=self._get_result)
 			self._monitor_done_thread.start()
 

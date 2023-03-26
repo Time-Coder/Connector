@@ -94,9 +94,9 @@ def CloseableQueueFactory(base=_Queue.Queue, name="CloseableQueue"):
                     elif timeout < 0:
                         raise ValueError("'timeout' must be a positive number")
                     else:
-                        endtime = _time() + timeout
+                        endtime = time() + timeout
                         while self._qsize() == self.maxsize and not self._closed:
-                            remaining = endtime - _time()
+                            remaining = endtime - time()
                             if remaining <= 0.0:
                                 raise Full
                             self.not_full.wait(remaining)
@@ -133,9 +133,9 @@ def CloseableQueueFactory(base=_Queue.Queue, name="CloseableQueue"):
                 elif timeout < 0:
                     raise ValueError("'timeout' must be a positive number")
                 else:
-                    endtime = _time() + timeout
+                    endtime = time() + timeout
                     while not self._qsize() and not self._closed:
-                        remaining = endtime - _time()
+                        remaining = endtime - time()
                         if remaining <= 0.0:
                             raise Empty
                         self.not_empty.wait(remaining)

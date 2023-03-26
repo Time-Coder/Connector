@@ -3,277 +3,208 @@ import os
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _utils import eprint
 
-def _globals_get(self, timeout=None, block=True):
-	if self._server != None:
-		return self._server.get(timeout=timeout, block=block)
+def _server_get(self, timeout=None, block=True):
+	session_id = self._get_session_id()
+	self._request(session_id, timeout=timeout, block=block)
+	response = self._recv_response(session_id)
+
+	if response["success"]:
+		return response["data"]["value"]
 	else:
-		session_id = self._get_session_id()
-		self._request(session_id, timeout=timeout, block=block)
-		response = self._recv_response(session_id)
+		eprint(response["traceback"])
+		raise response["exception"]
 
-		if response["success"]:
-			return response["data"]["value"]
-		else:
-			eprint(response["traceback"])
-			raise response["exception"]
-
-def _process__globals_get(self, request):
+def _process__server_get(self, request):
 	try:
-		value = self._server.get(timeout=request["data"]["timeout"], block=request["block"])
+		value = self._parent.get(timeout=request["data"]["timeout"], block=request["block"])
 		self._respond_ok(request["session_id"], value=value, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_put(self, value, timeout=None, block=True):
-	if self._server != None:
-		return self._server.put(value, timeout=timeout, block=block)
-	else:
-		session_id = self._get_session_id()
-		self._request(session_id, value=value, timeout=timeout, block=block, last_one=True)
-		response = self._recv_response(session_id)
+def _server_put(self, value, timeout=None, block=True):
+	session_id = self._get_session_id()
+	self._request(session_id, value=value, timeout=timeout, block=block, last_one=True)
+	response = self._recv_response(session_id)
 
-		if not response["success"]:
-			eprint(response["traceback"])
-			raise response["exception"]
+	if not response["success"]:
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_put(self, request):
+def _process__server_put(self, request):
 	try:
-		self._server.put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
+		self._parent.put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
 		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_qsize(self, timeout=None, block=True):
-	if self._server != None:
-		return self._server.qsize()
+def _server_qsize(self, timeout=None, block=True):
+	session_id = self._get_session_id()
+	self._request(session_id)
+	response = self._recv_response(session_id)
+
+	if response["success"]:
+		return response["data"]["qsize"]
 	else:
-		session_id = self._get_session_id()
-		self._request(session_id)
-		response = self._recv_response(session_id)
+		eprint(response["traceback"])
+		raise response["exception"]
 
-		if response["success"]:
-			return response["data"]["qsize"]
-		else:
-			eprint(response["traceback"])
-			raise response["exception"]
-
-def _process__globals_qsize(self, request):
+def _process__server_qsize(self, request):
 	try:
-		qsize = self._server.qsize()
+		qsize = self._parent.qsize()
 		self._respond_ok(request["session_id"], qsize=qsize, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_queue_get(self, name, timeout=None, block=True):
-	if self._server != None:
-		return self._server.queues[name].get(timeout=timeout, block=block)
+def _server_queue_get(self, name, timeout=None, block=True):
+	session_id = self._get_session_id()
+	self._request(session_id, name=name, timeout=timeout, block=block)
+	response = self._recv_response(session_id)
+	
+	if response["success"]:
+		return response["data"]["value"]
 	else:
-		session_id = self._get_session_id()
-		self._request(session_id, name=name, timeout=timeout, block=block)
-		response = self._recv_response(session_id)
-		
-		if response["success"]:
-			return response["data"]["value"]
-		else:
-			eprint(response["traceback"])
-			raise response["exception"]
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_queue_get(self, request):
+def _process__server_queue_get(self, request):
 	try:
-		value = self._server.queues[request["data"]["name"]].get(timeout=request["data"]["timeout"], block=request["block"])
+		value = self._parent.queues[request["data"]["name"]].get(timeout=request["data"]["timeout"], block=request["block"])
 		self._respond_ok(request["session_id"], value=value, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_queue_put(self, name, value, timeout = None, block = True):
-	if self._server != None:
-		self._server.queues[name].put(value, timeout = timeout, block=block)
-	else:
-		session_id = self._get_session_id()
-		self._request(session_id, name=name, value=value, timeout = timeout)
-		response = self._recv_response(session_id)
-		
-		if not response["success"]:
-			eprint(response["traceback"])
-			raise response["exception"]
+def _server_queue_put(self, name, value, timeout = None, block = True):
+	session_id = self._get_session_id()
+	self._request(session_id, name=name, value=value, timeout = timeout)
+	response = self._recv_response(session_id)
+	
+	if not response["success"]:
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_queue_put(self, request):
+def _process__server_queue_put(self, request):
 	try:
-		self._server.queues[request["data"]["name"]].put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
+		self._parent.queues[request["data"]["name"]].put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
 		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_queue_len(self, name):
-	if self._server != None:
-		if name not in self._server.queues:
-			return 0
-		else:
-			return self._server.queues[name].qsize()
+def _server_queue_len(self, name):
+	session_id = self._get_session_id()
+	self._request(session_id, name=name)
+	response = self._recv_response(session_id)
+	
+	if response["success"]:
+		return response["data"]["len"]
 	else:
-		session_id = self._get_session_id()
-		self._request(session_id, name=name)
-		response = self._recv_response(session_id)
-		
-		if response["success"]:
-			return response["data"]["len"]
-		else:
-			eprint(response["traceback"])
-			raise response["exception"]
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_queue_len(self, request):
+def _process__server_queue_len(self, request):
 	try:
-		if request["data"]["name"] not in self._server.queues:
+		if request["data"]["name"] not in self._parent.queues:
 			self._respond_ok(request["session_id"], len=0, last_one=True)
 		else:
-			self._respond_ok(request["session_id"], len=self._server.queues[request["data"]["name"]].qsize(), last_one=True)
+			self._respond_ok(request["session_id"], len=self._parent.queues[request["data"]["name"]].qsize(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_queue_close(self, name):
-	if self._server != None:
-		if name in self._server.queues:
-			try:
-				return self._server.queues[name].close()
-			except:
-				pass
-	else:
-		session_id = self._get_session_id()
-		self._request(session_id, name=name)
-		response = self._recv_response(session_id)
-		
-		if response["success"]:
-			return response["data"]["len"]
-		else:
-			eprint(response["traceback"])
-			raise response["exception"]
+def _server_queues_delitem(self, name):
+	session_id = self._get_session_id()
+	self._request(session_id, name=name)
+	response = self._recv_response(session_id)
+	
+	if not response["success"]:
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_queue_close(self, request):
+def _process__server_queues_delitem(self, request):
 	try:
-		name = request["data"]["name"]
-		if name in self._server.queues:
-			try:
-				self._server.queues[name].close()
-			except:
-				pass
+		del self._parent.queues[request["data"]["name"]]
 		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_queues_delitem(self, name):
-	if self._server != None:
-		del self._server.queues[name]
+def _server_queues_len(self):
+	session_id = self._get_session_id()
+	self._request(session_id)
+	response = self._recv_response(session_id)
+	
+	if response["success"]:
+		return response["data"]["len"]
 	else:
-		session_id = self._get_session_id()
-		self._request(session_id, name=name)
-		response = self._recv_response(session_id)
-		
-		if not response["success"]:
-			eprint(response["traceback"])
-			raise response["exception"]
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_queues_delitem(self, request):
+def _process__server_queues_len(self, request):
 	try:
-		del self._server.queues[request["data"]["name"]]
-		self._respond_ok(request["session_id"], last_one=True)
+		self._respond_ok(request["session_id"], len=self._parent.queues.__len__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_queues_len(self):
-	if self._server != None:
-		return len(self._server.queues)
+def _server_queues_contains(self, name):
+	session_id = self._get_session_id()
+	self._request(session_id, name=name)
+	response = self._recv_response(session_id)
+	
+	if response["success"]:
+		return response["data"]["contains"]
 	else:
-		session_id = self._get_session_id()
-		self._request(session_id)
-		response = self._recv_response(session_id)
-		
-		if response["success"]:
-			return response["data"]["len"]
-		else:
-			eprint(response["traceback"])
-			raise response["exception"]
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_queues_len(self, request):
+def _process__server_queues_contains(self, request):
 	try:
-		self._respond_ok(request["session_id"], len=self._server.queues.__len__(), last_one=True)
+		self._respond_ok(request["session_id"], contains=self._parent.queues.__contains__(request["data"]["name"]), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_queues_contains(self, name):
-	if self._server != None:
-		return self._server.queues.__contains__(name)
+def _server_queues_keys(self):
+	session_id = self._get_session_id()
+	self._request(session_id)
+	response = self._recv_response(session_id)
+	
+	if response["success"]:
+		return response["data"]["keys"]
 	else:
-		session_id = self._get_session_id()
-		self._request(session_id, name=name)
-		response = self._recv_response(session_id)
-		
-		if response["success"]:
-			return response["data"]["contains"]
-		else:
-			eprint(response["traceback"])
-			raise response["exception"]
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_queues_contains(self, request):
+def _process__server_queues_keys(self, request):
 	try:
-		self._respond_ok(request["session_id"], contains=self._server.queues.__contains__(request["data"]["name"]), last_one=True)
+		self._respond_ok(request["session_id"], keys=self._parent.queues.keys(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_queues_keys(self):
-	if self._server != None:
-		return self._server.queues.keys()
+def _server_queues_iter(self):
+	session_id = self._get_session_id()
+	self._request(session_id)
+	response = self._recv_response(session_id)
+	
+	if response["success"]:
+		return response["data"]["iter"]
 	else:
-		session_id = self._get_session_id()
-		self._request(session_id)
-		response = self._recv_response(session_id)
-		
-		if response["success"]:
-			return response["data"]["keys"]
-		else:
-			eprint(response["traceback"])
-			raise response["exception"]
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_queues_keys(self, request):
+def _process__server_queues_iter(self, request):
 	try:
-		self._respond_ok(request["session_id"], keys=self._server.queues.keys(), last_one=True)
+		self._respond_ok(request["session_id"], iter=self._parent.queues.__iter__(), last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
-def _globals_queues_iter(self):
-	if self._server != None:
-		return self._server.queues.__iter__()
-	else:
-		session_id = self._get_session_id()
-		self._request(session_id)
-		response = self._recv_response(session_id)
-		
-		if response["success"]:
-			return response["data"]["iter"]
-		else:
-			eprint(response["traceback"])
-			raise response["exception"]
+def _server_queues_clear(self):
+	session_id = self._get_session_id()
+	self._request(session_id)
+	response = self._recv_response(session_id)
+	
+	if not response["success"]:
+		eprint(response["traceback"])
+		raise response["exception"]
 
-def _process__globals_queues_iter(self, request):
+def _process__server_queues_clear(self, request):
 	try:
-		self._respond_ok(request["session_id"], iter=self._server.queues.__iter__(), last_one=True)
-	except BaseException as e:
-		self._respond_exception(request["session_id"], e)
-
-def _globals_queues_clear(self):
-	if self._server != None:
-		self._server.queues.clear()
-	else:
-		session_id = self._get_session_id()
-		self._request(session_id)
-		response = self._recv_response(session_id)
-		
-		if not response["success"]:
-			eprint(response["traceback"])
-			raise response["exception"]
-
-def _process__globals_queues_clear(self, request):
-	try:
-		self._server.queues.clear()
+		self._parent.queues.clear()
 		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)

@@ -12,11 +12,11 @@ def _write_to_file(self, data, filename):
 def _process__write_to_file(self, request):
 	try:
 		filename = os.path.abspath(request["data"]["file_name"])
-		if self._out_file != None and self._out_file.name != filename:
+		if self._out_file is not None and self._out_file.name != filename:
 			self._out_file.close()
 			self._out_file = None
 
-		if self._out_file == None:
+		if self._out_file is None:
 			if not os.path.isdir(os.path.dirname(filename)):
 				os.makedirs(os.path.dirname(filename))
 
@@ -32,7 +32,7 @@ def _close_file(self):
 
 def _process__close_file(self, request):
 	try:
-		if self._out_file != None:
+		if self._out_file is not None:
 			self._out_file.close()
 			self._out_file = None
 	except:
@@ -41,7 +41,7 @@ def _process__close_file(self, request):
 def get_file(self, src_filename, dest_filename = None, block=True):
 	session_id = self._get_session_id()
 
-	if dest_filename == None:
+	if dest_filename is None:
 		dest_filename = os.path.basename(src_filename)
 
 	self._request(session_id, src_filename=src_filename, file_size=file_size(dest_filename), md5=md5(dest_filename), block=block)
@@ -147,7 +147,7 @@ def put_file(self, src_filename, dest_filename = None, block=True):
 
 	session_id = self._get_session_id()
 
-	if dest_filename == None:
+	if dest_filename is None:
 		dest_filename = os.path.basename(src_filename)
 
 	src_file_size = file_size(src_filename)
@@ -231,7 +231,7 @@ def _process_put_file(self, request):
 
 def get_folder(self, src_foldername, dest_foldername = None, block=True):
 	session_id = self._get_session_id()
-	if dest_foldername == None:
+	if dest_foldername is None:
 		dest_foldername = os.path.basename(src_foldername)
 
 	self._request(session_id, src_foldername=src_foldername, block=block)
@@ -376,7 +376,7 @@ def put_folder(self, src_foldername, dest_foldername = None, block = True):
 
 	session_id = self._get_session_id()
 
-	if dest_foldername == None:
+	if dest_foldername is None:
 		dest_foldername = os.path.basename(src_foldername)
 
 	self._stop_send = False

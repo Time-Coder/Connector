@@ -3,10 +3,9 @@ import os
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from _utils import eprint
-from _NodeInternalClasses import CloseableQueue
 
 def put(self, value, timeout=None, block=True):
-	if self._server == None:
+	if self._parent is None:
 		self._queue.put(value)
 	else:
 		session_id = self._get_session_id()
@@ -17,7 +16,7 @@ def put(self, value, timeout=None, block=True):
 			raise response["exception"]
 
 def get(self, timeout=None, block=True):
-	if self._server == None:
+	if self._parent is None:
 		return self._queue.get()
 	else:
 		session_id = self._get_session_id()
@@ -30,7 +29,7 @@ def get(self, timeout=None, block=True):
 			raise response["exception"]
 
 def qsize(self):
-	if self._server == None:
+	if self._parent is None:
 		return self._queue.qsize()
 	else:
 		session_id = self._get_session_id()
@@ -42,16 +41,15 @@ def qsize(self):
 			eprint(response["traceback"])
 			raise response["exception"]
 
+def _used_queues(self, is_private):
+	if not is_private:
+		return self._actual_queues
+	else:
+		return self._actual_result_queues_for_future
+
 def _locals_queue_put(self, name, value, timeout, block, is_private):
-	if self._server == None:
-		if not is_private:
-			if name not in self._actual_queues:
-				self._actual_queues[name] = CloseableQueue()
-			self._actual_queues[name].put(value, timeout=timeout, block=block)
-		else:
-			if name not in self._actual_result_queues_for_future:
-				self._actual_result_queues_for_future[name] = CloseableQueue()
-			self._actual_result_queues_for_future[name].put(value, timeout=timeout, block=block)
+	if self._parent is None:
+		self._used_queues(is_private)[name].put(value, timeout=timeout, block=block)
 	else:
 		session_id = self._get_session_id()
 		self._request(session_id, name=name, value=value, timeout=timeout, block=block, is_private=is_private)
@@ -61,15 +59,8 @@ def _locals_queue_put(self, name, value, timeout, block, is_private):
 			raise response["exception"]
 
 def _locals_queue_get(self, name, timeout, block, is_private):
-	if self._server == None:
-		if not is_private:
-			if name not in self._actual_queues:
-				self._actual_queues[name] = CloseableQueue()
-			return self._actual_queues[name].get(timeout=timeout, block=block)
-		else:
-			if name not in self._actual_result_queues_for_future:
-				self._actual_result_queues_for_future[name] = CloseableQueue()
-			return self._actual_result_queues_for_future[name].get(timeout=timeout, block=block)
+	if self._parent is None:
+		return self._used_queues(is_private)[name].get(timeout=timeout, block=block)
 	else:
 		session_id = self._get_session_id()
 		self._request(session_id, name=name, timeout=timeout, block=block, is_private=is_private)
@@ -80,36 +71,13 @@ def _locals_queue_get(self, name, timeout, block, is_private):
 			eprint(response["traceback"])
 			raise response["exception"]
 
-def _locals_queue_close(self, name, is_private):
-	if self._server == None:
-		if not is_private:
-			if name not in self._actual_queues:
-				return
-			self._actual_queues[name].close()
-		else:
-			if name not in self._actual_result_queues_for_future:
-				return
-			self._actual_result_queues_for_future[name].close()
-	else:
-		session_id = self._get_session_id()
-		self._request(session_id, name=name, is_private=is_private)
-		response = self._recv_response(session_id)
-		if not response["success"]:
-			eprint(response["traceback"])
-			raise response["exception"]
-
 def _locals_queue_len(self, name, is_private):
-	if self._server == None:
-		if not is_private:
-			if name not in self._actual_queues:
-				return 0
-			else:
-				return self._actual_queues[name].qsize()
+	if self._parent is None:
+		used_queues = self._used_queues(is_private)
+		if name not in used_queues:
+			return 0
 		else:
-			if name not in self._actual_result_queues_for_future:
-				return 0
-			else:
-				return self._actual_result_queues_for_future[name].qsize()
+			return used_queues[name].qsize()
 	else:
 		session_id = self._get_session_id()
 		self._request(session_id, name=name, is_private=is_private)
@@ -121,13 +89,8 @@ def _locals_queue_len(self, name, is_private):
 			raise response["exception"]
 
 def _locals_queues_delitem(self, name, is_private):
-	if self._server == None:
-		if not is_private:
-			self._actual_queues[name].close()
-			del self._actual_queues[name]
-		else:
-			self._actual_result_queues_for_future[name].close()
-			del self._actual_result_queues_for_future[name]
+	if self._parent is None:
+		del self._used_queues(is_private)[name]
 	else:
 		session_id = self._get_session_id()
 		self._request(session_id, name=name, is_private=is_private)
@@ -137,11 +100,8 @@ def _locals_queues_delitem(self, name, is_private):
 			raise response["exception"]
 
 def _locals_queues_len(self, is_private):
-	if self._server == None:
-		if not is_private:
-			return self._actual_queues.__len__()
-		else:
-			return self._actual_result_queues_for_future.__len__()
+	if self._parent is None:
+		return len(self._used_queues(is_private))
 	else:
 		session_id = self._get_session_id()
 		self._request(session_id, is_private=is_private)
@@ -153,11 +113,8 @@ def _locals_queues_len(self, is_private):
 			raise response["exception"]
 
 def _locals_queues_contains(self, name, is_private):
-	if self._server == None:
-		if not is_private:
-			return self._actual_queues.__contains__(name)
-		else:
-			return self._actual_result_queues_for_future.__contains__(name)
+	if self._parent is None:
+		return (name in self._used_queues(is_private))
 	else:
 		session_id = self._get_session_id()
 		self._request(session_id, name=name, is_private=is_private)
@@ -169,11 +126,8 @@ def _locals_queues_contains(self, name, is_private):
 			raise response["exception"]
 
 def _locals_queues_keys(self, is_private):
-	if self._server == None:
-		if not is_private:
-			return self._actual_queues.keys()
-		else:
-			return self._actual_result_queues_for_future.keys()
+	if self._parent is None:
+		return self._used_queues(is_private).keys()
 	else:
 		session_id = self._get_session_id()
 		self._request(session_id, is_private=is_private)
@@ -185,11 +139,8 @@ def _locals_queues_keys(self, is_private):
 			raise response["exception"]
 
 def _locals_queues_iter(self, is_private):
-	if self._server == None:
-		if not is_private:
-			return self._actual_queues.__iter__()
-		else:
-			return self._actual_result_queues_for_future.__iter__()
+	if self._parent is None:
+		return self._used_queues(is_private).__iter__()
 	else:
 		session_id = self._get_session_id()
 		self._request(session_id, is_private=is_private)
@@ -201,15 +152,8 @@ def _locals_queues_iter(self, is_private):
 			raise response["exception"]
 
 def _locals_queues_clear(self, is_private):
-	if self._server == None:
-		if not is_private:
-			for name in self._actual_queues:
-				self._actual_queues[name].close()
-			self._actual_queues.clear()
-		else:
-			for name in self._actual_result_queues_for_future:
-				self._actual_result_queues_for_future[name].close()
-			self._actual_result_queues_for_future.clear()
+	if self._parent is None:
+		self._used_queues(is_private).clear()
 	else:
 		session_id = self._get_session_id()
 		self._request(session_id, is_private=is_private)
@@ -242,17 +186,8 @@ def _process_qsize(self, request):
 def _process__locals_queue_put(self, request):
 	try:
 		name = request["data"]["name"]
-		if not request["data"]["is_private"]:
-			if name not in self._actual_queues:
-				self._actual_queues[name] = CloseableQueue()
-
-			self._actual_queues[name].put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
-		else:
-			if name not in self._actual_result_queues_for_future:
-				self._actual_result_queues_for_future[name] = CloseableQueue()
-
-			self._actual_result_queues_for_future[name].put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
-
+		used_queue = self._used_queues(request["data"]["is_private"])[name]
+		used_queue.put(request["data"]["value"], timeout=request["data"]["timeout"], block=request["block"])
 		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
@@ -260,125 +195,64 @@ def _process__locals_queue_put(self, request):
 def _process__locals_queue_get(self, request):
 	try:
 		name = request["data"]["name"]
-		if not request["data"]["is_private"]:
-			if name not in self._actual_queues:
-				self._actual_queues[name] = CloseableQueue()
-
-			value = self._actual_queues[request["data"]["name"]].get(timeout=request["data"]["timeout"], block=request["block"])
-		else:
-			if name not in self._actual_result_queues_for_future:
-				self._actual_result_queues_for_future[name] = CloseableQueue()
-
-			value = self._actual_result_queues_for_future[request["data"]["name"]].get(timeout=request["data"]["timeout"], block=request["block"])
+		used_queue = self._used_queues(request["data"]["is_private"])[name]
+		value = used_queue.get(timeout=request["data"]["timeout"], block=request["block"])
 		self._respond_ok(request["session_id"], value=value, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queue_len(self, request):
 	try:
-		if not request["data"]["is_private"]:
-			if request["data"]["name"] not in self._actual_queues:
-				self._respond_ok(request["session_id"], len=0, last_one=True)
-			else:
-				self._respond_ok(request["session_id"], len=self._actual_queues[request["data"]["name"]].qsize(), last_one=True)
-		else:
-			if request["data"]["name"] not in self._actual_result_queues_for_future:
-				self._respond_ok(request["session_id"], len=0, last_one=True)
-			else:
-				self._respond_ok(request["session_id"], len=self._actual_result_queues_for_future[request["data"]["name"]].qsize(), last_one=True)
-	except BaseException as e:
-		self._respond_exception(request["session_id"], e)
-
-def _process__locals_queue_close(self, request):
-	try:
 		name = request["data"]["name"]
-		if not request["data"]["is_private"]:
-			try:
-				self._actual_queues[name].close()
-			except:
-				pass
-		else:
-			try:
-				self._actual_result_queues_for_future[name].close()
-			except:
-				pass
-		self._respond_ok(request["session_id"], last_one=True)
+		used_queues = self._used_queues(request["data"]["is_private"])
+		queue_len = 0
+		if name in used_queues:
+			queue_len = used_queues[name].qsize()
+		self._respond_ok(request["session_id"], len=queue_len, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_delitem(self, request):
 	try:
 		name = request["data"]["name"]
-		if not request["data"]["is_private"]:
-			try:
-				self._actual_queues[name].close()
-			except:
-				pass
-
-			del self._actual_queues[name]
-		else:
-			try:
-				self._actual_result_queues_for_future[name].close()
-			except:
-				pass
-			del self._actual_result_queues_for_future[name]
+		del self._used_queues(request["data"]["is_private"])[name]
 		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_len(self, request):
 	try:
-		if not request["data"]["is_private"]:
-			self._respond_ok(request["session_id"], len=self._actual_queues.__len__(), last_one=True)
-		else:
-			self._respond_ok(request["session_id"], len=self._actual_result_queues_for_future.__len__(), last_one=True)
+		queues_len = len(self._used_queues(request["data"]["is_private"]))
+		self._respond_ok(request["session_id"], len=queues_len, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_contains(self, request):
 	try:
-		if not request["data"]["is_private"]:
-			self._respond_ok(request["session_id"], contains=self._actual_queues.__contains__(request["data"]["name"]), last_one=True)
-		else:
-			self._respond_ok(request["session_id"], contains=self._actual_result_queues_for_future.__contains__(request["data"]["name"]), last_one=True)
+		name = request["data"]["name"]
+		is_private = request["data"]["is_private"]
+		queues_conntains = (name in self._used_queues(is_private))
+		self._respond_ok(request["session_id"], contains=queues_conntains, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_keys(self, request):
 	try:
-		if not request["data"]["is_private"]:
-			self._respond_ok(request["session_id"], keys=self._actual_queues.keys(), last_one=True)
-		else:
-			self._respond_ok(request["session_id"], keys=self._actual_result_queues_for_future.keys(), last_one=True)
+		queues_keys = self._used_queues(request["data"]["is_private"]).keys()
+		self._respond_ok(request["session_id"], keys=queues_keys, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_iter(self, request):
 	try:
-		if not request["data"]["is_private"]:
-			self._respond_ok(request["session_id"], iter=self._actual_queues.__iter__(), last_one=True)
-		else:
-			self._respond_ok(request["session_id"], iter=self._actual_result_queues_for_future.__iter__(), last_one=True)
+		queues_iter = self._used_queues(request["data"]["is_private"]).__iter__()
+		self._respond_ok(request["session_id"], iter=queues_iter, last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)
 
 def _process__locals_queues_clear(self, request):
 	try:
-		if not request["data"]["is_private"]:
-			for name in self._actual_queues:
-				try:
-					self._actual_queues[name].close()
-				except:
-					pass
-			self._actual_queues.clear()
-		else:
-			for name in self._actual_result_queues_for_future:
-				try:
-					self._actual_result_queues_for_future[name].close()
-				except:
-					pass
-			self._actual_result_queues_for_future.clear()
-
+		self._used_queues(request["data"]["is_private"]).clear()
 		self._respond_ok(request["session_id"], last_one=True)
 	except BaseException as e:
 		self._respond_exception(request["session_id"], e)

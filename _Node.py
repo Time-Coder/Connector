@@ -40,7 +40,6 @@ class Node:
 	recv = _NodeLocalPipesMethods.recv
 	_locals_pipe_send = _NodeLocalPipesMethods._locals_pipe_send
 	_locals_pipe_recv = _NodeLocalPipesMethods._locals_pipe_recv
-	_locals_pipe_close = _NodeLocalPipesMethods._locals_pipe_close
 	_locals_pipes_len = _NodeLocalPipesMethods._locals_pipes_len
 	_locals_pipes_contains = _NodeLocalPipesMethods._locals_pipes_contains
 	_locals_pipes_keys = _NodeLocalPipesMethods._locals_pipes_keys
@@ -51,7 +50,6 @@ class Node:
 	_process_recv = _NodeLocalPipesMethods._process_recv
 	_process__locals_pipe_send = _NodeLocalPipesMethods._process__locals_pipe_send
 	_process__locals_pipe_recv = _NodeLocalPipesMethods._process__locals_pipe_recv
-	_process__locals_pipe_close = _NodeLocalPipesMethods._process__locals_pipe_close
 	_process__locals_pipes_len = _NodeLocalPipesMethods._process__locals_pipes_len
 	_process__locals_pipes_contains = _NodeLocalPipesMethods._process__locals_pipes_contains
 	_process__locals_pipes_keys = _NodeLocalPipesMethods._process__locals_pipes_keys
@@ -63,9 +61,9 @@ class Node:
 	put = _NodeLocalQueuesMethods.put
 	get = _NodeLocalQueuesMethods.get
 	qsize = _NodeLocalQueuesMethods.qsize
+	_used_queues = _NodeLocalQueuesMethods._used_queues
 	_locals_queue_put = _NodeLocalQueuesMethods._locals_queue_put
 	_locals_queue_get = _NodeLocalQueuesMethods._locals_queue_get
-	_locals_queue_close = _NodeLocalQueuesMethods._locals_queue_close
 	_locals_queue_len = _NodeLocalQueuesMethods._locals_queue_len
 	_locals_queues_len = _NodeLocalQueuesMethods._locals_queues_len
 	_locals_queues_contains = _NodeLocalQueuesMethods._locals_queues_contains
@@ -79,7 +77,6 @@ class Node:
 	_process__locals_queue_put = _NodeLocalQueuesMethods._process__locals_queue_put
 	_process__locals_queue_get = _NodeLocalQueuesMethods._process__locals_queue_get
 	_process__locals_queue_len = _NodeLocalQueuesMethods._process__locals_queue_len
-	_process__locals_queue_close = _NodeLocalQueuesMethods._process__locals_queue_close
 	_process__locals_queues_len = _NodeLocalQueuesMethods._process__locals_queues_len
 	_process__locals_queues_contains = _NodeLocalQueuesMethods._process__locals_queues_contains
 	_process__locals_queues_keys = _NodeLocalQueuesMethods._process__locals_queues_keys
@@ -112,56 +109,54 @@ class Node:
 	_process_pop = _NodeLocalDictMethods._process_pop
 
 	# global queues
-	_globals_get = _NodeGlobalQueuesMethods._globals_get
-	_globals_put = _NodeGlobalQueuesMethods._globals_put
-	_globals_qsize = _NodeGlobalQueuesMethods._globals_qsize
-	_globals_queue_get = _NodeGlobalQueuesMethods._globals_queue_get
-	_globals_queue_put = _NodeGlobalQueuesMethods._globals_queue_put
-	_globals_queue_close = _NodeGlobalQueuesMethods._globals_queue_close
-	_globals_queue_len = _NodeGlobalQueuesMethods._globals_queue_len
-	_globals_queues_len = _NodeGlobalQueuesMethods._globals_queues_len
-	_globals_queues_delitem = _NodeGlobalQueuesMethods._globals_queues_delitem
-	_globals_queues_contains = _NodeGlobalQueuesMethods._globals_queues_contains
-	_globals_queues_keys = _NodeGlobalQueuesMethods._globals_queues_keys
-	_globals_queues_iter = _NodeGlobalQueuesMethods._globals_queues_iter
-	_globals_queues_clear = _NodeGlobalQueuesMethods._globals_queues_clear
-	_process__globals_get = _NodeGlobalQueuesMethods._process__globals_get
-	_process__globals_put = _NodeGlobalQueuesMethods._process__globals_put
-	_process__globals_qsize = _NodeGlobalQueuesMethods._process__globals_qsize
-	_process__globals_queue_get = _NodeGlobalQueuesMethods._process__globals_queue_get
-	_process__globals_queue_put = _NodeGlobalQueuesMethods._process__globals_queue_put
-	_process__globals_queue_close = _NodeGlobalQueuesMethods._process__globals_queue_close
-	_process__globals_queue_len = _NodeGlobalQueuesMethods._process__globals_queue_len
-	_process__globals_queues_len = _NodeGlobalQueuesMethods._process__globals_queues_len
-	_process__globals_queues_delitem = _NodeGlobalQueuesMethods._process__globals_queues_delitem
-	_process__globals_queues_contains = _NodeGlobalQueuesMethods._process__globals_queues_contains
-	_process__globals_queues_keys = _NodeGlobalQueuesMethods._process__globals_queues_keys
-	_process__globals_queues_iter = _NodeGlobalQueuesMethods._process__globals_queues_iter
-	_process__globals_queues_clear = _NodeGlobalQueuesMethods._process__globals_queues_clear
+	_server_get = _NodeGlobalQueuesMethods._server_get
+	_server_put = _NodeGlobalQueuesMethods._server_put
+	_server_qsize = _NodeGlobalQueuesMethods._server_qsize
+	_server_queue_get = _NodeGlobalQueuesMethods._server_queue_get
+	_server_queue_put = _NodeGlobalQueuesMethods._server_queue_put
+	_server_queue_len = _NodeGlobalQueuesMethods._server_queue_len
+	_server_queues_len = _NodeGlobalQueuesMethods._server_queues_len
+	_server_queues_delitem = _NodeGlobalQueuesMethods._server_queues_delitem
+	_server_queues_contains = _NodeGlobalQueuesMethods._server_queues_contains
+	_server_queues_keys = _NodeGlobalQueuesMethods._server_queues_keys
+	_server_queues_iter = _NodeGlobalQueuesMethods._server_queues_iter
+	_server_queues_clear = _NodeGlobalQueuesMethods._server_queues_clear
+	_process__server_get = _NodeGlobalQueuesMethods._process__server_get
+	_process__server_put = _NodeGlobalQueuesMethods._process__server_put
+	_process__server_qsize = _NodeGlobalQueuesMethods._process__server_qsize
+	_process__server_queue_get = _NodeGlobalQueuesMethods._process__server_queue_get
+	_process__server_queue_put = _NodeGlobalQueuesMethods._process__server_queue_put
+	_process__server_queue_len = _NodeGlobalQueuesMethods._process__server_queue_len
+	_process__server_queues_len = _NodeGlobalQueuesMethods._process__server_queues_len
+	_process__server_queues_delitem = _NodeGlobalQueuesMethods._process__server_queues_delitem
+	_process__server_queues_contains = _NodeGlobalQueuesMethods._process__server_queues_contains
+	_process__server_queues_keys = _NodeGlobalQueuesMethods._process__server_queues_keys
+	_process__server_queues_iter = _NodeGlobalQueuesMethods._process__server_queues_iter
+	_process__server_queues_clear = _NodeGlobalQueuesMethods._process__server_queues_clear
 
 	# global shared dict
-	_globals_getitem = _NodeGlobalDictMethods._globals_getitem
-	_globals_setitem = _NodeGlobalDictMethods._globals_setitem
-	_globals_delitem = _NodeGlobalDictMethods._globals_delitem
-	_globals_pop = _NodeGlobalDictMethods._globals_pop
-	_globals_iter = _NodeGlobalDictMethods._globals_iter
-	_globals_contains = _NodeGlobalDictMethods._globals_contains
-	_globals_len = _NodeGlobalDictMethods._globals_len
-	_globals_keys = _NodeGlobalDictMethods._globals_keys
-	_globals_values = _NodeGlobalDictMethods._globals_values
-	_globals_items = _NodeGlobalDictMethods._globals_items
-	_globals_clear = _NodeGlobalDictMethods._globals_clear
-	_process__globals_getitem = _NodeGlobalDictMethods._process__globals_getitem
-	_process__globals_setitem = _NodeGlobalDictMethods._process__globals_setitem
-	_process__globals_delitem = _NodeGlobalDictMethods._process__globals_delitem
-	_process__globals_clear = _NodeGlobalDictMethods._process__globals_clear
-	_process__globals_keys = _NodeGlobalDictMethods._process__globals_keys
-	_process__globals_values = _NodeGlobalDictMethods._process__globals_values
-	_process__globals_items = _NodeGlobalDictMethods._process__globals_items
-	_process__globals_iter = _NodeGlobalDictMethods._process__globals_iter
-	_process__globals_contains = _NodeGlobalDictMethods._process__globals_contains
-	_process__globals_len = _NodeGlobalDictMethods._process__globals_len
-	_process__globals_pop = _NodeGlobalDictMethods._process__globals_pop
+	_server_getitem = _NodeGlobalDictMethods._server_getitem
+	_server_setitem = _NodeGlobalDictMethods._server_setitem
+	_server_delitem = _NodeGlobalDictMethods._server_delitem
+	_server_pop = _NodeGlobalDictMethods._server_pop
+	_server_iter = _NodeGlobalDictMethods._server_iter
+	_server_contains = _NodeGlobalDictMethods._server_contains
+	_server_len = _NodeGlobalDictMethods._server_len
+	_server_keys = _NodeGlobalDictMethods._server_keys
+	_server_values = _NodeGlobalDictMethods._server_values
+	_server_items = _NodeGlobalDictMethods._server_items
+	_server_clear = _NodeGlobalDictMethods._server_clear
+	_process__server_getitem = _NodeGlobalDictMethods._process__server_getitem
+	_process__server_setitem = _NodeGlobalDictMethods._process__server_setitem
+	_process__server_delitem = _NodeGlobalDictMethods._process__server_delitem
+	_process__server_clear = _NodeGlobalDictMethods._process__server_clear
+	_process__server_keys = _NodeGlobalDictMethods._process__server_keys
+	_process__server_values = _NodeGlobalDictMethods._process__server_values
+	_process__server_items = _NodeGlobalDictMethods._process__server_items
+	_process__server_iter = _NodeGlobalDictMethods._process__server_iter
+	_process__server_contains = _NodeGlobalDictMethods._process__server_contains
+	_process__server_len = _NodeGlobalDictMethods._process__server_len
+	_process__server_pop = _NodeGlobalDictMethods._process__server_pop
 
 	# file transfer
 	get_file = _NodeFileTransferMethods.get_file
@@ -201,23 +196,27 @@ class Node:
 
 	@property
 	def address(self):
-		return self._address
+		try:
+			if self._parent is None:
+				return self._connection.getsockname()
+			else:
+				return self._connection.getpeername()
+		except:
+			return None
 
 	@property
 	def server_address(self):
-		return self._server_address
+		try:
+			if self._parent is None:
+				return self._connection.getpeername()
+			else:
+				return self._parent.address
+		except:
+			return None
 
 	@property
 	def server(self):
-		return self._server
-
-	@property
-	def locals(self):
-		return self
-
-	@property
-	def globals(self):
-		return self._globals
+		return self._server_peer
 
 	@property
 	def queues(self):
