@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="tcp-connector",
-    version="0.0.6",
+    version="0.0.7",
     author="Time-Coder",
     author_email="binghui.wang@foxmail.com",
     description="A lightweight network programming tool for Python",

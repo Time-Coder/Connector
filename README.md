@@ -14,10 +14,15 @@ In addition, You can:
 * find PyPI index at: [https://pypi.org/project/tcp-connector](https://pypi.org/project/tcp-connector)
 
 ## Release Note
+
+### 0.0.7
+* Reconstruct and optimize all code.
+
 ### 0.0.5
 * Support finding default IP on Linux by introducing `netifaces` module;
 * Support sending lambda function by changing module `cloudpick` to `dill`;
 * Use uuid for session id;
 * Remove unneeded queue after a session finished.
+
 ### 0.0.4
 * First stable release
