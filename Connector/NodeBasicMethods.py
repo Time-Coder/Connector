@@ -20,14 +20,22 @@ complex_request = ["get_file", "put_file",
 def __init__(self, connection, server=None):
     self._connection = connection
     if hasattr(self, "_send_buffer"):
-        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._send_buffer)
+        self._connection.setsockopt(
+            socket.SOL_SOCKET, socket.SO_SNDBUF, self._send_buffer
+        )
     else:
-        self._send_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+        self._send_buffer = self._connection.getsockopt(
+            socket.SOL_SOCKET, socket.SO_SNDBUF
+        )
 
     if hasattr(self, "_recv_buffer"):
-        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._recv_buffer)
+        self._connection.setsockopt(
+            socket.SOL_SOCKET, socket.SO_RCVBUF, self._recv_buffer
+        )
     else:
-        self._recv_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        self._recv_buffer = self._connection.getsockopt(
+            socket.SOL_SOCKET, socket.SO_RCVBUF
+        )
 
     self._parent = server
     self._pipes = Pipes(self)

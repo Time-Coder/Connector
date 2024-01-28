@@ -161,7 +161,7 @@ class Server:
 
     def put_file_to(self, src_file_name, address_file_map):
         if not os.path.isfile(src_file_name):
-            raise FileNotFoundError("File " + src_file_name + " is not exists.")
+            raise FileNotFoundError(f"File {src_file_name} is not exists.")
 
         sent_size = 0
         src_file_size = file_size(src_file_name)
@@ -242,18 +242,26 @@ class Server:
 
     @send_buffer.setter
     def send_buffer(self, buffer_size):
-        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, buffer_size)
-        self._send_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+        self._connection.setsockopt(
+            socket.SOL_SOCKET, socket.SO_SNDBUF, buffer_size
+        )
+        self._send_buffer = self._connection.getsockopt(
+            socket.SOL_SOCKET, socket.SO_SNDBUF
+        )
         for client in self.clients:
             client._send_buffer = self._send_buffer
 
     @property
     def recv_buffer(self):
         return self._recv_buffer
-    
+
     @recv_buffer.setter
     def recv_buffer(self, buffer_size):
-        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size)
-        self._recv_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        self._connection.setsockopt(
+            socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size
+        )
+        self._recv_buffer = self._connection.getsockopt(
+            socket.SOL_SOCKET, socket.SO_RCVBUF
+        )
         for client in self.clients:
             client._recv_buffer = self._recv_buffer

@@ -137,7 +137,7 @@ class Peer(Node):
 
     def put_file_to(self, src_file_name, address_file_map):
         if not os.path.isfile(src_file_name):
-            raise FileNotFoundError("File " + src_file_name + " is not exists.")
+            raise FileNotFoundError(f"File {src_file_name} is not exists.")
 
         sent_size = 0
         src_file_size = file_size(src_file_name)

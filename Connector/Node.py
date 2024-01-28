@@ -9,6 +9,7 @@ from .NodeRPCMethods import init_rpc_methods
 
 import socket
 
+
 @init_rpc_methods
 @init_file_transfer_methods
 @init_global_dict_methods
@@ -64,18 +65,26 @@ class Node:
 
     @send_buffer.setter
     def send_buffer(self, buffer_size):
-        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, buffer_size)
-        self._send_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+        self._connection.setsockopt(
+            socket.SOL_SOCKET, socket.SO_SNDBUF, buffer_size
+        )
+        self._send_buffer = self._connection.getsockopt(
+            socket.SOL_SOCKET, socket.SO_SNDBUF
+        )
         if self._parent is not None:
             self._parent._send_buffer = self._send_buffer
 
     @property
     def recv_buffer(self):
         return self._recv_buffer
-    
+
     @recv_buffer.setter
     def recv_buffer(self, buffer_size):
-        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size)
-        self._recv_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+        self._connection.setsockopt(
+            socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size
+        )
+        self._recv_buffer = self._connection.getsockopt(
+            socket.SOL_SOCKET, socket.SO_RCVBUF
+        )
         if self._parent is not None:
             self._parent._recv_buffer = self._recv_buffer

@@ -472,10 +472,14 @@ def put_folder(self, src_folder_name, dest_folder_name=None, block=True):
 
     self._stop_send = False
     if Config.debug:
-        self._request(session_id, dest_folder_name=dest_folder_name, block=block,
-                      debug=f"I will send you folder: {dest_folder_name}")
+        self._request(
+            session_id, dest_folder_name=dest_folder_name, block=block,
+            debug=f"I will send you folder: {dest_folder_name}"
+        )
     else:
-        self._request(session_id, dest_folder_name=dest_folder_name, block=block)
+        self._request(
+            session_id, dest_folder_name=dest_folder_name, block=block
+        )
 
     def session():
         response = self._recv_response(session_id)

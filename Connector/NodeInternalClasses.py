@@ -28,7 +28,7 @@ class OrderedDict(collections.OrderedDict):
     def __delitem__(self, name):
         if isinstance(name, int):
             name = list(self.keys())[name]
-            
+
         collections.OrderedDict.__delitem__(self, name)
 
 
@@ -423,7 +423,7 @@ class Thread(threading.Thread):
 
 
 class Future:
-    
+
     def __init__(self, node, session_id):
         self._node = node
         self._session_id = session_id
