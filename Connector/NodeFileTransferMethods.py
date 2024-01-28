@@ -133,10 +133,9 @@ def _process_get_file(self, session_id, request):
             self._make_signal(session_id)
             return
 
-        block_size = 8192*1024
         sent_size = 0
         while sent_size < src_file_size:
-            data = file.read(block_size)
+            data = file.read(self.send_buffer)
             sent_size += len(data)
             self._respond_ok(
                 session_id, data=data,
@@ -187,16 +186,15 @@ def put_file(self, src_file_name, dest_file_name=None, block=True):
             eprint(response["traceback"])
             raise response["exception"]
 
-        block_size = 8192*1024
         sent_size = 0
         while sent_size < src_file_size:
             if self._stop_send:
                 break
-            data = file.read(block_size)
+            data = file.read(self.send_buffer)
             sent_size += len(data)
             self._respond_ok(
                 session_id, data=data,
-                last_one=(sent_size == src_file_size), debug=f"send data session_id: {session_id}"
+                last_one=(sent_size == src_file_size)
             )
         file.close()
 
@@ -421,10 +419,9 @@ def _process_get_folder(self, session_id, request):
                 if not response["success"] or response["data"]["same_file"]:
                     continue
 
-                block_size = 8192*1024
                 sent_size = 0
                 while sent_size < src_file_size:
-                    data = file.read(block_size)
+                    data = file.read(self.send_buffer)
                     if Config.debug:
                         message = f"Please write {len(data)} bytes data to file {file_name}"
                         self._respond_ok(
@@ -545,12 +542,11 @@ def put_folder(self, src_folder_name, dest_folder_name=None, block=True):
                 if not response["success"] or response["data"]["same_file"]:
                     continue
 
-                block_size = 8192*1024
                 sent_size = 0
                 while sent_size < src_file_size:
                     if self._stop_send:
                         return
-                    data = file.read(block_size)
+                    data = file.read(self.send_buffer)
                     if Config.debug:
                         message = f"Please write {len(data)} bytes to file {file_name}"
                         self._respond_ok(

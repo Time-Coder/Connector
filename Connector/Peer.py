@@ -139,12 +139,11 @@ class Peer(Node):
         if not os.path.isfile(src_file_name):
             raise FileNotFoundError("File " + src_file_name + " is not exists.")
 
-        block_size = 8192*1024
         sent_size = 0
         src_file_size = file_size(src_file_name)
         with open(src_file_name, "rb") as file:
             while sent_size < src_file_size:
-                data = file.read(block_size)
+                data = file.read(self.send_buffer)
                 for address in address_file_map:
                     try:
                         client = self._connected_nodes[address]
@@ -168,7 +167,6 @@ class Peer(Node):
         while src_folder_name[i] in ['/', '\\']:
             i -= 1
 
-        block_size = 8192*1024
         for root, dirs, files in os.walk(src_folder_name):
             for name in files:
                 src_file_name = os.path.join(root, name)
@@ -177,7 +175,7 @@ class Peer(Node):
                 src_file_size = file_size(src_file_name)
                 with open(src_file_name, "rb") as file:
                     while sent_size < src_file_size:
-                        data = file.read(block_size)
+                        data = file.read(self.send_buffer)
                         for address in address_file_map:
                             try:
                                 client = self._connected_nodes[address]

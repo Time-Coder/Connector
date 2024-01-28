@@ -7,6 +7,7 @@ from .NodeGlobalDictMethods import init_global_dict_methods
 from .NodeFileTransferMethods import init_file_transfer_methods
 from .NodeRPCMethods import init_rpc_methods
 
+import socket
 
 @init_rpc_methods
 @init_file_transfer_methods
@@ -56,3 +57,25 @@ class Node:
     @property
     def pipes(self):
         return self._pipes
+
+    @property
+    def send_buffer(self):
+        return self._send_buffer
+
+    @send_buffer.setter
+    def send_buffer(self, buffer_size):
+        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, buffer_size)
+        self._send_buffer = buffer_size
+        if self._parent is not None:
+            self._parent._send_buffer = buffer_size
+
+    @property
+    def recv_buffer(self):
+        return self._recv_buffer
+    
+    @recv_buffer.setter
+    def recv_buffer(self, buffer_size):
+        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size)
+        self._recv_buffer = buffer_size
+        if self._parent is not None:
+            self._parent._recv_buffer = buffer_size

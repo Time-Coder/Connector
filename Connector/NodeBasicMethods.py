@@ -3,6 +3,7 @@ import dill
 import sys
 import traceback
 import uuid
+import socket
 from concurrent.futures import ThreadPoolExecutor
 
 from .CloseableQueue import CloseableQueue
@@ -24,6 +25,8 @@ def __init__(self, connection, server=None):
     self._queues = Queues(self)
     self._result_queues_for_future = Queues(self, private=True)
     self._recved_binary_queue = CloseableQueue()
+    self._send_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+    self._recv_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
 
     if self._parent is None:
         self._local_vars = {}
@@ -373,7 +376,7 @@ def _recv_response(self, session_id):
 def _recving_loop(self):
     while True:
         try:
-            recved_binary = self._connection.recv(8192*1024)
+            recved_binary = self._connection.recv(self.recv_buffer)
             self._recved_binary_queue.put(recved_binary)
         except BaseException:
             self.close()

@@ -39,6 +39,8 @@ class Server:
             return
 
         self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._send_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+        self._recv_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
 
         if ip is None:
             ip = get_ip()
@@ -51,7 +53,7 @@ class Server:
         self._continue_accept = True
         if self._accept_thread is None or not self._accept_thread.is_alive():
             self._accept_thread = threading.Thread(
-                target=self._start, daemon=True
+                target=self._acceptting_loop, daemon=True
             )
             self._accept_thread.start()
 
@@ -163,12 +165,11 @@ class Server:
         if not os.path.isfile(src_file_name):
             raise FileNotFoundError("File " + src_file_name + " is not exists.")
 
-        block_size = 8192*1024
         sent_size = 0
         src_file_size = file_size(src_file_name)
         with open(src_file_name, "rb") as file:
             while sent_size < src_file_size:
-                data = file.read(block_size)
+                data = file.read(self.send_buffer)
                 for address in address_file_map:
                     try:
                         client = self._connected_nodes[address]
@@ -192,7 +193,6 @@ class Server:
         while src_folder_name[i] in ['/', '\\']:
             i -= 1
 
-        block_size = 8192*1024
         for root, dirs, files in os.walk(src_folder_name):
             for name in files:
                 src_file_name = os.path.join(root, name)
@@ -201,7 +201,7 @@ class Server:
                 src_file_size = file_size(src_file_name)
                 with open(src_file_name, "rb") as file:
                     while sent_size < src_file_size:
-                        data = file.read(block_size)
+                        data = file.read(self.block_size)
                         for address in address_file_map:
                             try:
                                 client = self._connected_nodes[address]
@@ -222,7 +222,7 @@ class Server:
     def hold_on(self):
         threading.Event().wait()
 
-    def _start(self):
+    def _acceptting_loop(self):
         while self._continue_accept:
             try:
                 client_socket, address = self._connection.accept()
@@ -237,3 +237,25 @@ class Server:
                 node._respond_ok(session_id=b'\x00'*16)
             except BaseException:
                 break
+
+    @property
+    def send_buffer(self):
+        return self._send_buffer
+
+    @send_buffer.setter
+    def send_buffer(self, buffer_size):
+        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, buffer_size)
+        self._send_buffer = buffer_size
+        for client in self.clients:
+            client._send_buffer = buffer_size
+
+    @property
+    def recv_buffer(self):
+        return self._recv_buffer
+    
+    @recv_buffer.setter
+    def recv_buffer(self, buffer_size):
+        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size)
+        self._recv_buffer = buffer_size
+        for client in self.clients:
+            client._recv_buffer = buffer_size
