@@ -2,7 +2,7 @@ import threading
 import os
 
 from .utils import file_size, md5, eprint
-from .config import debug
+from .Config import Config
 from .NodeInternalClasses import Future, Thread
 
 
@@ -267,7 +267,7 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
     if dest_foldername is None:
         dest_foldername = os.path.basename(src_foldername)
 
-    if debug:
+    if Config.debug:
         self._request(session_id, src_foldername=src_foldername, block=block,
                       debug=f"I need folder {src_foldername}")
     else:
@@ -289,7 +289,7 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
                 except BaseException:
                     eprint(self._traceback(False))
 
-        if debug:
+        if Config.debug:
             self._respond_ok(session_id,
                              debug="Created all folders. Please send files.")
         else:
@@ -310,7 +310,7 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
                          data["md5"] == md5(dest_filename))
 
             if same_file:
-                if debug:
+                if Config.debug:
                     self._respond_ok(
                         session_id, same_file=same_file,
                         debug=f"Already have file: {dest_filename}"
@@ -322,7 +322,7 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
             else:
                 try:
                     file = open(dest_filename, "wb")
-                    if debug:
+                    if Config.debug:
                         self._respond_ok(
                             session_id, same_file=same_file,
                             debug="I don't have this file, please send me."
@@ -333,7 +333,7 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
                     file.close()
                 except BaseException as e:
                     eprint(self._traceback())
-                    if debug:
+                    if Config.debug:
                         self._respond_exception(session_id, e,
                                                 debug="Error")
                     else:
@@ -375,7 +375,7 @@ def _process_get_folder(self, session_id, request):
         for root, dirs, files in os.walk(src_foldername):
             for name in dirs:
                 folders.append(os.path.join(root, name)[i+2:])
-        if debug:
+        if Config.debug:
             self._respond_ok(session_id, folders=folders,
                              debug=f"Please create folders: {folders}")
         else:
@@ -392,7 +392,7 @@ def _process_get_folder(self, session_id, request):
                 try:
                     file = open(src_filename, "rb")
                     file.close()
-                    if debug:
+                    if Config.debug:
                         self._respond_ok(
                             session_id, finished=False,
                             file_name=file_name,
@@ -406,7 +406,7 @@ def _process_get_folder(self, session_id, request):
                             file_size=src_file_size, md5=md5(src_filename)
                         )
                 except BaseException as e:
-                    if debug:
+                    if Config.debug:
                         self._respond_exception(
                             session_id, e,
                             debug=f"I cannot open file: {src_filename}"
@@ -424,7 +424,7 @@ def _process_get_folder(self, session_id, request):
                 with open(src_filename, "rb") as file:
                     while sent_size < src_file_size:
                         data = file.read(block_size)
-                        if debug:
+                        if Config.debug:
                             message = f"Please write {len(data)} bytes data to file {file_name}"
                             self._respond_ok(
                                 session_id, data=data,
@@ -434,7 +434,7 @@ def _process_get_folder(self, session_id, request):
                             self._respond_ok(session_id, data=data)
                         sent_size += len(data)
 
-        if debug:
+        if Config.debug:
             self._respond_ok(session_id, finished=True, last_one=True,
                              debug="Sent all files.")
         else:
@@ -451,7 +451,7 @@ def _process_get_folder(self, session_id, request):
     if signal["cancel"] and thread.is_alive():
         thread.kill()
         thread.join()
-        if debug:
+        if Config.debug:
             self._respond_ok(session_id, cancel=True, last_one=True,
                              debug="Cancel.")
         else:
@@ -472,7 +472,7 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
         dest_foldername = os.path.basename(src_foldername)
 
     self._stop_send = False
-    if debug:
+    if Config.debug:
         self._request(session_id, dest_foldername=dest_foldername, block=block,
                       debug=f"I will send you folder: {dest_foldername}")
     else:
@@ -495,7 +495,7 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
         for root, dirs, files in os.walk(src_foldername):
             for name in dirs:
                 folders.append(os.path.join(root, name)[i+2:])
-        if debug:
+        if Config.debug:
             self._respond_ok(session_id, folders=folders,
                              debug=f"Please create folders: {folders}")
         else:
@@ -514,7 +514,7 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
                 try:
                     file = open(src_filename, "rb")
                     file.close()
-                    if debug:
+                    if Config.debug:
                         self._respond_ok(
                             session_id, finished=False,
                             file_name=file_name,
@@ -529,7 +529,7 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
                         )
 
                 except BaseException as e:
-                    if debug:
+                    if Config.debug:
                         self._respond_exception(session_id, e,
                                                 debug="Error")
                     else:
@@ -551,7 +551,7 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
                         if self._stop_send:
                             return
                         data = file.read(block_size)
-                        if debug:
+                        if Config.debug:
                             message = f"Please write {len(data)} bytes to file {file_name}"
                             self._respond_ok(
                                 session_id, data=data,
@@ -562,7 +562,7 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
 
                         sent_size += len(data)
 
-        if debug:
+        if Config.debug:
             self._respond_ok(
                 session_id, finished=True, last_one=True,
                 debug="Sent all files."
@@ -584,14 +584,14 @@ def _process_put_folder(self, session_id, request):
         try:
             if not os.path.isdir(dest_foldername):
                 os.makedirs(dest_foldername)
-            if debug:
+            if Config.debug:
                 self._respond_ok(session_id,
                                  debug=f"Created folder {dest_foldername}")
             else:
                 self._respond_ok(session_id)
 
         except BaseException as e:
-            if debug:
+            if Config.debug:
                 self._respond_exception(
                     session_id, e, block=request["block"],
                     debug=f"Cannot create folder {dest_foldername}"
@@ -610,7 +610,7 @@ def _process_put_folder(self, session_id, request):
                 except BaseException:
                     pass
 
-        if debug:
+        if Config.debug:
             self._respond_ok(session_id,
                              debug="Created all folders.")
         else:
@@ -630,7 +630,7 @@ def _process_put_folder(self, session_id, request):
                          data["md5"] == md5(dest_filename))
 
             if same_file:
-                if debug:
+                if Config.debug:
                     self._respond_ok(
                         session_id, same_file=same_file,
                         debug=f"Already have file {dest_filename}"
@@ -642,7 +642,7 @@ def _process_put_folder(self, session_id, request):
             else:
                 try:
                     file = open(dest_filename, "wb")
-                    if debug:
+                    if Config.debug:
                         self._respond_ok(
                             session_id, same_file=same_file,
                             debug="I don't have this file, please send me."
@@ -652,7 +652,7 @@ def _process_put_folder(self, session_id, request):
 
                     file.close()
                 except BaseException as e:
-                    if debug:
+                    if Config.debug:
                         self._respond_exception(session_id, e,
                                                 debug="Error")
                     else:
@@ -680,7 +680,7 @@ def _process_put_folder(self, session_id, request):
     if signal["cancel"] and thread.is_alive():
         thread.kill()
         thread.join()
-        if debug:
+        if Config.debug:
             self._respond_ok(session_id, cancel=True, last_one=True,
                              debug="Cancel.")
         else:

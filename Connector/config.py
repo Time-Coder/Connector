@@ -1,1 +1,2 @@
-debug = False
+class Config:
+    debug = False
