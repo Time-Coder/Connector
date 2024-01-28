@@ -196,7 +196,7 @@ def put_file(self, src_file_name, dest_file_name=None, block=True):
             sent_size += len(data)
             self._respond_ok(
                 session_id, data=data,
-                last_one=(sent_size == src_file_size)
+                last_one=(sent_size == src_file_size), debug=f"send data session_id: {session_id}"
             )
         file.close()
 
@@ -585,7 +585,7 @@ def _process_put_folder(self, session_id, request):
         try:
             if not os.path.isdir(dest_folder_name):
                 os.makedirs(dest_folder_name)
-                
+
             if Config.debug:
                 self._respond_ok(session_id,
                                  debug=f"Created folder {dest_folder_name}")
