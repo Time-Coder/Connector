@@ -6,22 +6,23 @@ from .Config import Config
 from .NodeInternalClasses import Future, Thread
 
 
-def _write_to_file(self, data, filename):
-    self._request(self._get_session_id(), data=data, file_name=filename)
+def _write_to_file(self, data, file_name):
+    self._request(self._get_session_id(), data=data, file_name=file_name)
 
 
 def _process__write_to_file(self, request):
     try:
-        filename = os.path.abspath(request["data"]["file_name"])
-        if self._out_file is not None and self._out_file.name != filename:
+        file_name = os.path.abspath(request["data"]["file_name"])
+        if self._out_file is not None and self._out_file.name != file_name:
             self._out_file.close()
             self._out_file = None
 
         if self._out_file is None:
-            if not os.path.isdir(os.path.dirname(filename)):
-                os.makedirs(os.path.dirname(filename))
+            folder_path = os.path.dirname(file_name)
+            if not os.path.isdir(folder_path):
+                os.makedirs(folder_path)
 
-            self._out_file = open(filename, "wb")
+            self._out_file = open(file_name, "wb")
 
         self._out_file.write(request["data"]["data"])
         self._out_file.flush()
@@ -42,16 +43,16 @@ def _process__close_file(self, request):
         pass
 
 
-def get_file(self, src_filename, dest_filename=None, block=True):
+def get_file(self, src_file_name, dest_file_name=None, block=True):
     session_id = self._get_session_id()
 
-    if dest_filename is None:
-        dest_filename = os.path.basename(src_filename)
+    if dest_file_name is None:
+        dest_file_name = os.path.basename(src_file_name)
 
     self._request(
-        session_id, src_filename=src_filename,
-        file_size=file_size(dest_filename),
-        md5=md5(dest_filename), block=block
+        session_id, src_file_name=src_file_name,
+        file_size=file_size(dest_file_name),
+        md5=md5(dest_file_name), block=block
     )
 
     def session():
@@ -63,13 +64,13 @@ def get_file(self, src_filename, dest_filename=None, block=True):
             eprint(response["traceback"])
             raise response["exception"]
 
-        if not os.path.isdir(os.path.dirname(os.path.abspath(dest_filename))):
-            os.makedirs(os.path.dirname(os.path.abspath(dest_filename)))
+        folder_path = os.path.dirname(os.path.abspath(dest_file_name))
+        if not os.path.isdir(folder_path):
+            os.makedirs(folder_path)
 
         try:
-            file = open(dest_filename, "wb")
+            file = open(dest_file_name, "wb")
             self._respond_ok(session_id)
-            file.close()
         except BaseException as e:
             self._respond_exception(session_id, e)
             if block:
@@ -79,14 +80,15 @@ def get_file(self, src_filename, dest_filename=None, block=True):
 
         recved_size = 0
         full_size = response["data"]["file_size"]
-        with open(dest_filename, "wb") as file:
-            while recved_size < full_size:
-                response = self._recv_response(session_id)
-                if response["cancel"]:
-                    break
-                file.write(response["data"]["data"])
-                file.flush()
-                recved_size += len(response["data"]["data"])
+        while recved_size < full_size:
+            response = self._recv_response(session_id)
+            if response["cancel"]:
+                break
+            data = response["data"]["data"]
+            file.write(data)
+            file.flush()
+            recved_size += len(data)
+        file.close()
 
     if block:
         session()
@@ -99,15 +101,14 @@ def get_file(self, src_filename, dest_filename=None, block=True):
 def _process_get_file(self, session_id, request):
     def session():
         data = request["data"]
-        src_filename = data["src_filename"]
-        src_file_size = file_size(src_filename)
+        src_file_name = data["src_file_name"]
+        src_file_size = file_size(src_file_name)
 
         same_file = (src_file_size != 0 and
                      data["file_size"] == src_file_size and
-                     data["md5"] == md5(src_filename))
+                     data["md5"] == md5(src_file_name))
         try:
-            file = open(src_filename, "rb")
-            file.close()
+            file = open(src_file_name, "rb")
             self._respond_ok(
                 session_id, same_file=same_file,
                 file_size=src_file_size, last_one=same_file
@@ -134,14 +135,14 @@ def _process_get_file(self, session_id, request):
 
         block_size = 8192*1024
         sent_size = 0
-        with open(src_filename, "rb") as file:
-            while sent_size < src_file_size:
-                data = file.read(block_size)
-                sent_size += len(data)
-                self._respond_ok(
-                    session_id, data=data,
-                    last_one=(sent_size == src_file_size)
-                )
+        while sent_size < src_file_size:
+            data = file.read(block_size)
+            sent_size += len(data)
+            self._respond_ok(
+                session_id, data=data,
+                last_one=(sent_size == src_file_size)
+            )
+        file.close()
 
         if not request["block"]:
             self._put_result(session_id)
@@ -160,22 +161,20 @@ def _process_get_file(self, session_id, request):
         thread.join()
 
 
-def put_file(self, src_filename, dest_filename=None, block=True):
-    file = open(src_filename, "rb")
-    file.close()
-
+def put_file(self, src_file_name, dest_file_name=None, block=True):
+    file = open(src_file_name, "rb")
     session_id = self._get_session_id()
 
-    if dest_filename is None:
-        dest_filename = os.path.basename(src_filename)
+    if dest_file_name is None:
+        dest_file_name = os.path.basename(src_file_name)
 
-    src_file_size = file_size(src_filename)
+    src_file_size = file_size(src_file_name)
 
     self._stop_send = False
     self._request(
-        session_id, md5=md5(src_filename),
+        session_id, md5=md5(src_file_name),
         file_size=src_file_size,
-        dest_filename=dest_filename,
+        dest_file_name=dest_file_name,
         block=block
     )
 
@@ -190,16 +189,16 @@ def put_file(self, src_filename, dest_filename=None, block=True):
 
         block_size = 8192*1024
         sent_size = 0
-        with open(src_filename, "rb") as file:
-            while sent_size < src_file_size:
-                if self._stop_send:
-                    break
-                data = file.read(block_size)
-                sent_size += len(data)
-                self._respond_ok(
-                    session_id, data=data,
-                    last_one=(sent_size == src_file_size)
-                )
+        while sent_size < src_file_size:
+            if self._stop_send:
+                break
+            data = file.read(block_size)
+            sent_size += len(data)
+            self._respond_ok(
+                session_id, data=data,
+                last_one=(sent_size == src_file_size)
+            )
+        file.close()
 
     if block:
         session()
@@ -211,11 +210,12 @@ def put_file(self, src_filename, dest_filename=None, block=True):
 
 def _process_put_file(self, session_id, request):
     def session():
-        dest_filename = request["data"]["dest_filename"]
-        full_size = request["data"]["file_size"]
+        data = request["data"]
+        dest_file_name = data["dest_file_name"]
+        full_size = data["file_size"]
 
-        if full_size == file_size(dest_filename) and \
-           request["data"]["md5"] == md5(dest_filename):
+        if full_size == file_size(dest_file_name) and \
+           data["md5"] == md5(dest_file_name):
             self._respond_ok(
                 session_id, same_file=True,
                 block=request["block"], last_one=True
@@ -223,12 +223,12 @@ def _process_put_file(self, session_id, request):
             self._make_signal(session_id)
             return
 
-        if not os.path.isdir(os.path.dirname(os.path.abspath(dest_filename))):
-            os.makedirs(os.path.dirname(os.path.abspath(dest_filename)))
+        folder_path = os.path.dirname(os.path.abspath(dest_file_name))
+        if not os.path.isdir(folder_path):
+            os.makedirs(folder_path)
 
         try:
-            file = open(dest_filename, "wb")
-            file.close()
+            file = open(dest_file_name, "wb")
             self._respond_ok(session_id, same_file=False)
         except BaseException as e:
             self._respond_exception(
@@ -238,12 +238,15 @@ def _process_put_file(self, session_id, request):
             return
 
         recved_size = 0
-        with open(dest_filename, "wb") as file:
-            while recved_size < full_size:
-                response = self._recv_response(session_id)
-                file.write(response["data"]["data"])
-                file.flush()
-                recved_size += len(response["data"]["data"])
+        while recved_size < full_size:
+            response = self._recv_response(session_id)
+            if response["cancel"]:
+                break
+            data = response["data"]["data"]
+            file.write(data)
+            file.flush()
+            recved_size += len(data)
+        file.close()
 
         if not request["block"]:
             self._put_result(session_id)
@@ -262,16 +265,16 @@ def _process_put_file(self, session_id, request):
         thread.join()
 
 
-def get_folder(self, src_foldername, dest_foldername=None, block=True):
+def get_folder(self, src_folder_name, dest_folder_name=None, block=True):
     session_id = self._get_session_id()
-    if dest_foldername is None:
-        dest_foldername = os.path.basename(src_foldername)
+    if dest_folder_name is None:
+        dest_folder_name = os.path.basename(src_folder_name)
 
     if Config.debug:
-        self._request(session_id, src_foldername=src_foldername, block=block,
-                      debug=f"I need folder {src_foldername}")
+        self._request(session_id, src_folder_name=src_folder_name, block=block,
+                      debug=f"I need folder {src_folder_name}")
     else:
-        self._request(session_id, src_foldername=src_foldername, block=block)
+        self._request(session_id, src_folder_name=src_folder_name, block=block)
 
     def session():
         response = self._recv_response(session_id)
@@ -283,9 +286,10 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
             raise response["exception"]
 
         for folder in response["data"]["folders"]:
-            if not os.path.isdir(dest_foldername + "/" + folder):
+            folder_path = dest_folder_name + "/" + folder
+            if not os.path.isdir(folder_path):
                 try:
-                    os.makedirs(dest_foldername + "/" + folder)
+                    os.makedirs(folder_path)
                 except BaseException:
                     eprint(self._traceback(False))
 
@@ -305,15 +309,15 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
                 eprint(response["traceback"])
                 continue
 
-            dest_filename = dest_foldername + "/" + data["file_name"]
-            same_file = (data["file_size"] == file_size(dest_filename) and
-                         data["md5"] == md5(dest_filename))
+            dest_file_name = dest_folder_name + "/" + data["file_name"]
+            same_file = (data["file_size"] == file_size(dest_file_name) and
+                         data["md5"] == md5(dest_file_name))
 
             if same_file:
                 if Config.debug:
                     self._respond_ok(
                         session_id, same_file=same_file,
-                        debug=f"Already have file: {dest_filename}"
+                        debug=f"Already have file: {dest_file_name}"
                     )
                 else:
                     self._respond_ok(session_id, same_file=same_file)
@@ -321,7 +325,7 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
                 continue
             else:
                 try:
-                    file = open(dest_filename, "wb")
+                    file = open(dest_file_name, "wb")
                     if Config.debug:
                         self._respond_ok(
                             session_id, same_file=same_file,
@@ -329,8 +333,6 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
                         )
                     else:
                         self._respond_ok(session_id, same_file=same_file)
-
-                    file.close()
                 except BaseException as e:
                     eprint(self._traceback())
                     if Config.debug:
@@ -342,14 +344,15 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
 
             recved_size = 0
             full_size = response["data"]["file_size"]
-            with open(dest_filename, "wb") as file:
-                while recved_size < full_size:
-                    response = self._recv_response(session_id)
-                    if response["cancel"]:
-                        return
-                    file.write(response["data"]["data"])
-                    file.flush()
-                    recved_size += len(response["data"]["data"])
+            while recved_size < full_size:
+                response = self._recv_response(session_id)
+                if response["cancel"]:
+                    return
+                data = response["data"]["data"]
+                file.write(data)
+                file.flush()
+                recved_size += len(data)
+            file.close()
 
     if block:
         session()
@@ -361,18 +364,18 @@ def get_folder(self, src_foldername, dest_foldername=None, block=True):
 
 def _process_get_folder(self, session_id, request):
     def session():
-        src_foldername = request["data"]["src_foldername"]
-        if not os.path.isdir(src_foldername):
-            e = FileNotFoundError(f"{src_foldername} is not a folder.")
+        src_folder_name = request["data"]["src_folder_name"]
+        if not os.path.isdir(src_folder_name):
+            e = FileNotFoundError(f"{src_folder_name} is not a folder.")
             self._respond_exception(session_id, e, block=request["block"])
             self._make_signal(session_id)
             return
-        i = len(src_foldername)-1
-        while src_foldername[i] in ['/', '\\']:
+        i = len(src_folder_name)-1
+        while src_folder_name[i] in ['/', '\\']:
             i -= 1
 
         folders = []
-        for root, dirs, files in os.walk(src_foldername):
+        for root, dirs, files in os.walk(src_folder_name):
             for name in dirs:
                 folders.append(os.path.join(root, name)[i+2:])
         if Config.debug:
@@ -383,33 +386,32 @@ def _process_get_folder(self, session_id, request):
 
         response = self._recv_response(session_id)
 
-        for root, dirs, files in os.walk(src_foldername):
+        for root, dirs, files in os.walk(src_folder_name):
             for name in files:
-                src_filename = os.path.join(root, name)
-                src_file_size = file_size(src_filename)
-                file_name = src_filename[i+2:]
+                src_file_name = os.path.join(root, name)
+                src_file_size = file_size(src_file_name)
+                file_name = src_file_name[i+2:]
 
                 try:
-                    file = open(src_filename, "rb")
-                    file.close()
+                    file = open(src_file_name, "rb")
                     if Config.debug:
                         self._respond_ok(
                             session_id, finished=False,
                             file_name=file_name,
-                            file_size=src_file_size, md5=md5(src_filename),
-                            debug=f"Do you have file {src_filename} ?"
+                            file_size=src_file_size, md5=md5(src_file_name),
+                            debug=f"Do you have file {src_file_name} ?"
                         )
                     else:
                         self._respond_ok(
                             session_id, finished=False,
                             file_name=file_name,
-                            file_size=src_file_size, md5=md5(src_filename)
+                            file_size=src_file_size, md5=md5(src_file_name)
                         )
                 except BaseException as e:
                     if Config.debug:
                         self._respond_exception(
                             session_id, e,
-                            debug=f"I cannot open file: {src_filename}"
+                            debug=f"I cannot open file: {src_file_name}"
                         )
                     else:
                         self._respond_exception(session_id, e)
@@ -421,18 +423,18 @@ def _process_get_folder(self, session_id, request):
 
                 block_size = 8192*1024
                 sent_size = 0
-                with open(src_filename, "rb") as file:
-                    while sent_size < src_file_size:
-                        data = file.read(block_size)
-                        if Config.debug:
-                            message = f"Please write {len(data)} bytes data to file {file_name}"
-                            self._respond_ok(
-                                session_id, data=data,
-                                debug=message
-                            )
-                        else:
-                            self._respond_ok(session_id, data=data)
-                        sent_size += len(data)
+                while sent_size < src_file_size:
+                    data = file.read(block_size)
+                    if Config.debug:
+                        message = f"Please write {len(data)} bytes data to file {file_name}"
+                        self._respond_ok(
+                            session_id, data=data,
+                            debug=message
+                        )
+                    else:
+                        self._respond_ok(session_id, data=data)
+                    sent_size += len(data)
+                file.close()
 
         if Config.debug:
             self._respond_ok(session_id, finished=True, last_one=True,
@@ -462,21 +464,21 @@ def _process_get_folder(self, session_id, request):
         thread.join()
 
 
-def put_folder(self, src_foldername, dest_foldername=None, block=True):
-    if not os.path.isdir(src_foldername):
-        raise FileNotFoundError(src_foldername + " is not a folder.")
+def put_folder(self, src_folder_name, dest_folder_name=None, block=True):
+    if not os.path.isdir(src_folder_name):
+        raise FileNotFoundError(src_folder_name + " is not a folder.")
 
     session_id = self._get_session_id()
 
-    if dest_foldername is None:
-        dest_foldername = os.path.basename(src_foldername)
+    if dest_folder_name is None:
+        dest_folder_name = os.path.basename(src_folder_name)
 
     self._stop_send = False
     if Config.debug:
-        self._request(session_id, dest_foldername=dest_foldername, block=block,
-                      debug=f"I will send you folder: {dest_foldername}")
+        self._request(session_id, dest_folder_name=dest_folder_name, block=block,
+                      debug=f"I will send you folder: {dest_folder_name}")
     else:
-        self._request(session_id, dest_foldername=dest_foldername, block=block)
+        self._request(session_id, dest_folder_name=dest_folder_name, block=block)
 
     def session():
         response = self._recv_response(session_id)
@@ -487,12 +489,12 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
             eprint(response["traceback"])
             raise response["exception"]
 
-        i = len(src_foldername)-1
-        while src_foldername[i] in ['/', '\\']:
+        i = len(src_folder_name)-1
+        while src_folder_name[i] in ['/', '\\']:
             i -= 1
 
         folders = []
-        for root, dirs, files in os.walk(src_foldername):
+        for root, dirs, files in os.walk(src_folder_name):
             for name in dirs:
                 folders.append(os.path.join(root, name)[i+2:])
         if Config.debug:
@@ -505,27 +507,26 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
         if response["cancel"]:
             return
 
-        for root, dirs, files in os.walk(src_foldername):
+        for root, dirs, files in os.walk(src_folder_name):
             for name in files:
-                src_filename = os.path.join(root, name)
-                src_file_size = file_size(src_filename)
-                file_name = src_filename[i+2:]
+                src_file_name = os.path.join(root, name)
+                src_file_size = file_size(src_file_name)
+                file_name = src_file_name[i+2:]
 
                 try:
-                    file = open(src_filename, "rb")
-                    file.close()
+                    file = open(src_file_name, "rb")
                     if Config.debug:
                         self._respond_ok(
                             session_id, finished=False,
                             file_name=file_name,
-                            file_size=src_file_size, md5=md5(src_filename),
+                            file_size=src_file_size, md5=md5(src_file_name),
                             debug=f"Do you have file {file_name} ?"
                         )
                     else:
                         self._respond_ok(
                             session_id, finished=False,
                             file_name=file_name,
-                            file_size=src_file_size, md5=md5(src_filename)
+                            file_size=src_file_size, md5=md5(src_file_name)
                         )
 
                 except BaseException as e:
@@ -546,21 +547,21 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
 
                 block_size = 8192*1024
                 sent_size = 0
-                with open(src_filename, "rb") as file:
-                    while sent_size < src_file_size:
-                        if self._stop_send:
-                            return
-                        data = file.read(block_size)
-                        if Config.debug:
-                            message = f"Please write {len(data)} bytes to file {file_name}"
-                            self._respond_ok(
-                                session_id, data=data,
-                                debug=message
-                            )
-                        else:
-                            self._respond_ok(session_id, data=data)
+                while sent_size < src_file_size:
+                    if self._stop_send:
+                        return
+                    data = file.read(block_size)
+                    if Config.debug:
+                        message = f"Please write {len(data)} bytes to file {file_name}"
+                        self._respond_ok(
+                            session_id, data=data,
+                            debug=message
+                        )
+                    else:
+                        self._respond_ok(session_id, data=data)
 
-                        sent_size += len(data)
+                    sent_size += len(data)
+                file.close()
 
         if Config.debug:
             self._respond_ok(
@@ -580,13 +581,14 @@ def put_folder(self, src_foldername, dest_foldername=None, block=True):
 
 def _process_put_folder(self, session_id, request):
     def session():
-        dest_foldername = request["data"]["dest_foldername"]
+        dest_folder_name = request["data"]["dest_folder_name"]
         try:
-            if not os.path.isdir(dest_foldername):
-                os.makedirs(dest_foldername)
+            if not os.path.isdir(dest_folder_name):
+                os.makedirs(dest_folder_name)
+                
             if Config.debug:
                 self._respond_ok(session_id,
-                                 debug=f"Created folder {dest_foldername}")
+                                 debug=f"Created folder {dest_folder_name}")
             else:
                 self._respond_ok(session_id)
 
@@ -594,7 +596,7 @@ def _process_put_folder(self, session_id, request):
             if Config.debug:
                 self._respond_exception(
                     session_id, e, block=request["block"],
-                    debug=f"Cannot create folder {dest_foldername}"
+                    debug=f"Cannot create folder {dest_folder_name}"
                 )
             else:
                 self._respond_exception(session_id, e, block=request["block"])
@@ -604,9 +606,10 @@ def _process_put_folder(self, session_id, request):
 
         response = self._recv_response(session_id)
         for folder in response["data"]["folders"]:
-            if not os.path.isdir(dest_foldername + "/" + folder):
+            folder_path = dest_folder_name + "/" + folder
+            if not os.path.isdir(folder_path):
                 try:
-                    os.makedirs(dest_foldername + "/" + folder)
+                    os.makedirs(folder_path)
                 except BaseException:
                     pass
 
@@ -625,15 +628,15 @@ def _process_put_folder(self, session_id, request):
             if data["finished"]:
                 break
 
-            dest_filename = dest_foldername + "/" + data["file_name"]
-            same_file = (data["file_size"] == file_size(dest_filename) and
-                         data["md5"] == md5(dest_filename))
+            dest_file_name = dest_folder_name + "/" + data["file_name"]
+            same_file = (data["file_size"] == file_size(dest_file_name) and
+                         data["md5"] == md5(dest_file_name))
 
             if same_file:
                 if Config.debug:
                     self._respond_ok(
                         session_id, same_file=same_file,
-                        debug=f"Already have file {dest_filename}"
+                        debug=f"Already have file {dest_file_name}"
                     )
                 else:
                     self._respond_ok(session_id, same_file=same_file)
@@ -641,7 +644,7 @@ def _process_put_folder(self, session_id, request):
                 continue
             else:
                 try:
-                    file = open(dest_filename, "wb")
+                    file = open(dest_file_name, "wb")
                     if Config.debug:
                         self._respond_ok(
                             session_id, same_file=same_file,
@@ -649,8 +652,6 @@ def _process_put_folder(self, session_id, request):
                         )
                     else:
                         self._respond_ok(session_id, same_file=same_file)
-
-                    file.close()
                 except BaseException as e:
                     if Config.debug:
                         self._respond_exception(session_id, e,
@@ -662,12 +663,15 @@ def _process_put_folder(self, session_id, request):
 
             recved_size = 0
             full_size = response["data"]["file_size"]
-            with open(dest_filename, "wb") as file:
-                while recved_size < full_size:
-                    response = self._recv_response(session_id)
-                    file.write(response["data"]["data"])
-                    file.flush()
-                    recved_size += len(response["data"]["data"])
+            while recved_size < full_size:
+                response = self._recv_response(session_id)
+                if response["cancel"]:
+                    break
+                data = response["data"]["data"]
+                file.write(data)
+                file.flush()
+                recved_size += len(data)
+            file.close()
 
         if not request["block"]:
             self._put_result(session_id)

@@ -1,4 +1,5 @@
-from Connector import Server
+from Connector import Server, Config
+Config.debug = True
 
 server = Server()
 print(server.address)

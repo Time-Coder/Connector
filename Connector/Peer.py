@@ -135,14 +135,14 @@ class Peer(Node):
         except BaseException:
             pass
 
-    def put_file_to(self, src_filename, address_file_map):
-        if not os.path.isfile(src_filename):
-            raise FileNotFoundError("File " + src_filename + " is not exists.")
+    def put_file_to(self, src_file_name, address_file_map):
+        if not os.path.isfile(src_file_name):
+            raise FileNotFoundError("File " + src_file_name + " is not exists.")
 
         block_size = 8192*1024
         sent_size = 0
-        src_file_size = file_size(src_filename)
-        with open(src_filename, "rb") as file:
+        src_file_size = file_size(src_file_name)
+        with open(src_file_name, "rb") as file:
             while sent_size < src_file_size:
                 data = file.read(block_size)
                 for address in address_file_map:
@@ -160,22 +160,22 @@ class Peer(Node):
             except BaseException:
                 pass
 
-    def put_folder_to(self, src_foldername, address_file_map):
-        if not os.path.isdir(src_foldername):
-            raise FileNotFoundError(f"Folder {src_foldername} is not exists.")
+    def put_folder_to(self, src_folder_name, address_file_map):
+        if not os.path.isdir(src_folder_name):
+            raise FileNotFoundError(f"Folder {src_folder_name} is not exists.")
 
-        i = len(src_foldername)-1
-        while src_foldername[i] in ['/', '\\']:
+        i = len(src_folder_name)-1
+        while src_folder_name[i] in ['/', '\\']:
             i -= 1
 
         block_size = 8192*1024
-        for root, dirs, files in os.walk(src_foldername):
+        for root, dirs, files in os.walk(src_folder_name):
             for name in files:
-                src_filename = os.path.join(root, name)
+                src_file_name = os.path.join(root, name)
 
                 sent_size = 0
-                src_file_size = file_size(src_filename)
-                with open(src_filename, "rb") as file:
+                src_file_size = file_size(src_file_name)
+                with open(src_file_name, "rb") as file:
                     while sent_size < src_file_size:
                         data = file.read(block_size)
                         for address in address_file_map:
