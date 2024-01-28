@@ -9,6 +9,7 @@ from .utils import eprint
 
 
 class OrderedDict(collections.OrderedDict):
+
     def __init__(self, **kwargs):
         collections.OrderedDict.__init__(self, **kwargs)
 
@@ -22,18 +23,17 @@ class OrderedDict(collections.OrderedDict):
         if isinstance(name, int):
             name = list(self.keys())[name]
 
-        return collections.OrderedDict.__getitem__(
-            self, list(self.keys())[name]
-        )
+        return collections.OrderedDict.__getitem__(self, name)
 
     def __delitem__(self, name):
         if isinstance(name, int):
-            collections.OrderedDict.__delitem__(self, list(self.keys())[name])
-        else:
-            collections.OrderedDict.__delitem__(self, name)
+            name = list(self.keys())[name]
+            
+        collections.OrderedDict.__delitem__(self, name)
 
 
 class QueueDict(dict):
+
     def __init__(self):
         dict.__init__(self)
 
@@ -61,6 +61,7 @@ class QueueDict(dict):
 
 
 class PipeDict(dict):
+
     def __init__(self):
         dict.__init__(self)
 
@@ -99,6 +100,7 @@ class PipeDict(dict):
 
 
 class Pipe:
+
     def __init__(self, node, name):
         self._node = node
         self._name = name
@@ -111,6 +113,7 @@ class Pipe:
 
 
 class Pipes:
+
     def __init__(self, node):
         self._node = node
 
@@ -151,6 +154,7 @@ class Pipes:
 
 
 class Queue:
+
     def __init__(self, node, name, private=False):
         self._node = node
         self._name = name
@@ -181,6 +185,7 @@ class Queue:
 
 
 class Queues:
+
     def __init__(self, node, private=False):
         self._node = node
         self._is_private = private
@@ -223,6 +228,7 @@ class Queues:
 
 
 class ServerPeer:
+
     class Queue:
         def __init__(self, node, name):
             self._node = node
@@ -340,6 +346,7 @@ class ServerPeer:
 
 
 class AutoSendBuffer:
+
     def __init__(self, node, session_id, timeout=0.1, quiet=False):
         self._node = node
         self._session_id = session_id
@@ -390,6 +397,7 @@ class AutoSendBuffer:
 
 
 class Thread(threading.Thread):
+
     def __init__(self, target, args=(), kwargs={}):
         threading.Thread.__init__(
             self, target=target,
@@ -415,6 +423,7 @@ class Thread(threading.Thread):
 
 
 class Future:
+    
     def __init__(self, node, session_id):
         self._node = node
         self._session_id = session_id

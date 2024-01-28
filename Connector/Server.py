@@ -231,7 +231,8 @@ class Server:
                 self._connected_nodes[address] = node
 
                 result = self._callback_threads_pool.submit(
-                    self._on_connected, self._connected_nodes[address])
+                    self._on_connected, self._connected_nodes[address]
+                )
                 self.connect_results[address] = result
                 node._respond_ok(session_id=b'\x00'*16)
             except BaseException:

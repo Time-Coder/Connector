@@ -1,7 +1,5 @@
-from Connector import Client, Server
+from Connector import Server
 
 server = Server()
-client = Client()
-client.connect(server.address)
-client["test"] = 5
-print(server.clients[0]["test"])
+print(server.address)
+server.hold_on()
