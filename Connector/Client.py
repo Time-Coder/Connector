@@ -7,8 +7,6 @@ from .utils import get_ip
 class Client(Node):
 
     def __init__(self, ip=None, port=None):
-        self._send_buffer = None
-        self._recv_buffer = None
         if ip is None:
             ip = get_ip()
         if port is None:
