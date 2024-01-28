@@ -7,7 +7,8 @@ from .utils import get_ip
 class Client(Node):
 
     def __init__(self, ip=None, port=None):
-        self._is_Node_init = False
+        self._send_buffer = None
+        self._recv_buffer = None
         if ip is None:
             ip = get_ip()
         if port is None:
@@ -34,7 +35,7 @@ class Client(Node):
         except BaseException:
             pass
 
-        if self._is_Node_init and not self.is_closed:
+        if server_address is not None and not self.is_closed:
             self.close()
 
         if self._connection is None:

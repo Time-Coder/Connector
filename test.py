@@ -1,6 +1,6 @@
-from Connector import Server, Config
+from Connector import Server, Client, Config
 Config.debug = True
 
 server = Server()
-print(server.address)
-server.hold_on()
+client = Client()
+client.connect(server.address)

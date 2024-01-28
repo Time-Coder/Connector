@@ -39,8 +39,6 @@ class Server:
             return
 
         self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._send_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
-        self._recv_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
 
         if ip is None:
             ip = get_ip()
@@ -245,9 +243,9 @@ class Server:
     @send_buffer.setter
     def send_buffer(self, buffer_size):
         self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, buffer_size)
-        self._send_buffer = buffer_size
+        self._send_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
         for client in self.clients:
-            client._send_buffer = buffer_size
+            client._send_buffer = self._send_buffer
 
     @property
     def recv_buffer(self):
@@ -256,6 +254,6 @@ class Server:
     @recv_buffer.setter
     def recv_buffer(self, buffer_size):
         self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, buffer_size)
-        self._recv_buffer = buffer_size
+        self._recv_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
         for client in self.clients:
-            client._recv_buffer = buffer_size
+            client._recv_buffer = self._recv_buffer

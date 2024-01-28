@@ -18,15 +18,22 @@ complex_request = ["get_file", "put_file",
 
 
 def __init__(self, connection, server=None):
-    self._is_Node_init = True
     self._connection = connection
+    if self._send_buffer is None:
+        self._send_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+    else:
+        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._send_buffer)
+
+    if self._recv_buffer is None:
+        self._recv_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+    else:
+        self._connection.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._recv_buffer)
+
     self._parent = server
     self._pipes = Pipes(self)
     self._queues = Queues(self)
     self._result_queues_for_future = Queues(self, private=True)
     self._recved_binary_queue = CloseableQueue()
-    self._send_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
-    self._recv_buffer = self._connection.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
 
     if self._parent is None:
         self._local_vars = {}
