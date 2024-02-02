@@ -4,7 +4,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 from .Node import Node
-from .NodeInternalClasses import OrderedDict
+from .OrderedDict import OrderedDict
 from .utils import file_size, get_ip
 
 

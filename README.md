@@ -15,6 +15,9 @@ In addition, You can:
 
 ## Release Note
 
+### 0.0.8
+* Optimize close behavior.
+
 ### 0.0.7
 * Reconstruct and optimize all code.
 

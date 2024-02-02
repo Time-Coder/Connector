@@ -3,7 +3,8 @@ import os
 
 from .utils import file_size, md5, eprint
 from .Config import Config
-from .NodeInternalClasses import Future, Thread
+from .Future import Future
+from .KillableThread import KillableThread
 
 
 def _write_to_file(self, data, file_name):
@@ -148,7 +149,7 @@ def _process_get_file(self, session_id, request):
 
         self._make_signal(session_id)
 
-    thread = Thread(target=session)
+    thread = KillableThread(target=session)
     thread.start()
     signal = self._recv_signal(session_id)
     if signal["cancel"] and thread.is_alive():
@@ -201,7 +202,7 @@ def put_file(self, src_file_name, dest_file_name=None, block=True):
     if block:
         session()
     else:
-        thread = Thread(target=session)
+        thread = KillableThread(target=session)
         thread.start()
         return Future(self, session_id)
 
@@ -251,7 +252,7 @@ def _process_put_file(self, session_id, request):
 
         self._make_signal(session_id)
 
-    thread = Thread(target=session)
+    thread = KillableThread(target=session)
     thread.start()
     signal = self._recv_signal(session_id)
     if signal["cancel"] and thread.is_alive():
@@ -444,7 +445,7 @@ def _process_get_folder(self, session_id, request):
 
         self._make_signal(session_id)
 
-    thread = Thread(target=session)
+    thread = KillableThread(target=session)
     thread.start()
     signal = self._recv_signal(session_id)
     if signal["cancel"] and thread.is_alive():
@@ -678,7 +679,7 @@ def _process_put_folder(self, session_id, request):
 
         self._make_signal(session_id)
 
-    thread = Thread(target=session)
+    thread = KillableThread(target=session)
     thread.start()
     signal = self._recv_signal(session_id)
     if signal["cancel"] and thread.is_alive():

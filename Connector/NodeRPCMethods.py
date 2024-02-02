@@ -1,7 +1,9 @@
 import os
 import subprocess
 
-from .NodeInternalClasses import Future, Thread, AutoSendBuffer
+from .Future import Future
+from .KillableThread import KillableThread
+from .AutoSendBuffer import AutoSendBuffer
 from .utils import eprint
 
 
@@ -35,7 +37,7 @@ def _process_eval(self, session_id, request):
                 self._respond_exception(session_id, e, block=block)
             self._make_signal(session_id)
 
-        thread = Thread(target=session)
+        thread = KillableThread(target=session)
         thread.start()
         signal = self._recv_signal(session_id)
         if signal["cancel"] and thread.is_alive():
@@ -75,7 +77,7 @@ def _process_exec(self, session_id, request):
 
             self._make_signal(session_id)
 
-        thread = Thread(target=session)
+        thread = KillableThread(target=session)
         thread.start()
         signal = self._recv_signal(session_id)
         if signal["cancel"] and thread.is_alive():
@@ -115,7 +117,7 @@ def system(self, cmd,
         if block:
             session(session_id, quiet)
         else:
-            thread = Thread(target=session, args=(session_id, quiet))
+            thread = KillableThread(target=session, args=(session_id, quiet))
             thread.start()
             return Future(self, session_id)
     else:
@@ -168,7 +170,7 @@ def _process_system(self, session_id, request):
                     self.__did_put_result = True
                 self._make_signal(session_id)
 
-            thread = Thread(target=session)
+            thread = KillableThread(target=session)
             thread.start()
             signal = self._recv_signal(session_id)
             if signal["cancel"] and thread.is_alive():
@@ -205,7 +207,7 @@ def _process_system(self, session_id, request):
                 )
                 self._make_signal(session_id)
 
-            thread = Thread(target=session)
+            thread = KillableThread(target=session)
             thread.start()
             signal = self._recv_signal(session_id)
             if signal["cancel"] and thread.is_alive():
@@ -260,7 +262,7 @@ def _process_call(self, session_id, request):
 
             self._make_signal(session_id)
 
-        thread = Thread(target=session)
+        thread = KillableThread(target=session)
         thread.start()
         signal = self._recv_signal(session_id)
         if signal["cancel"] and thread.is_alive():
@@ -310,7 +312,7 @@ def _process_call_remote(self, session_id, request):
 
             self._make_signal(session_id)
 
-        thread = Thread(target=session)
+        thread = KillableThread(target=session)
         thread.start()
         signal = self._recv_signal(session_id)
         if signal["cancel"] and thread.is_alive():
@@ -357,7 +359,7 @@ def _process_exec_remote_file(self, session_id, request):
 
             self._make_signal(session_id)
 
-        thread = Thread(target=session)
+        thread = KillableThread(target=session)
         thread.start()
         signal = self._recv_signal(session_id)
         if signal["cancel"] and thread.is_alive():

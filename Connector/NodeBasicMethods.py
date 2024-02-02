@@ -8,7 +8,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 from .CloseableQueue import CloseableQueue
 from .CloseablePipe import CloseablePipe
-from .NodeInternalClasses import Pipes, Queues, PipeDict, QueueDict, ServerPeer
+from .Pipes import PipeDict, Pipes
+from .Queues import QueueDict, Queues
+from .ServerPeer import ServerPeer
 
 complex_request = ["get_file", "put_file",
                    "get_folder", "put_folder",
@@ -104,9 +106,9 @@ def hold_on(self):
 def _close(self):
     if self._is_internal_closing or self.is_closed:
         return
-    
+
     self._is_internal_closing = True
-    
+
     self_address = self.address
     try:
         self._connection.close()
@@ -195,7 +197,7 @@ def _close(self):
 def close(self):
     if self._is_closing or self.is_closed:
         return
-    
+
     self._is_closing = True
 
     try:
@@ -409,7 +411,7 @@ def _recving_loop(self):
         except BaseException:
             self._close()
             return
-        
+
         self._recved_binary_queue.put(recved_binary)
 
 
