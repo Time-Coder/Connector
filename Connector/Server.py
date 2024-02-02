@@ -23,6 +23,7 @@ class Server:
         self._queue = CloseableQueue()
         self._queues = QueueDict()
 
+        self._is_closing = False
         self._continue_accept = False
         self._accept_thread = None
 
@@ -39,6 +40,23 @@ class Server:
             return
 
         self._connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if hasattr(self, "_send_buffer"):
+            self._connection.setsockopt(
+                socket.SOL_SOCKET, socket.SO_SNDBUF, self._send_buffer
+            )
+        else:
+            self._send_buffer = self._connection.getsockopt(
+                socket.SOL_SOCKET, socket.SO_SNDBUF
+            )
+
+        if hasattr(self, "_recv_buffer"):
+            self._connection.setsockopt(
+                socket.SOL_SOCKET, socket.SO_RCVBUF, self._recv_buffer
+            )
+        else:
+            self._recv_buffer = self._connection.getsockopt(
+                socket.SOL_SOCKET, socket.SO_RCVBUF
+            )
 
         if ip is None:
             ip = get_ip()
@@ -56,6 +74,10 @@ class Server:
             self._accept_thread.start()
 
     def close(self):
+        if self._is_closing:
+            return
+
+        self._is_closing = True
         self._continue_accept = False
 
         try:
@@ -91,6 +113,8 @@ class Server:
         if self._accept_thread is not None and self._accept_thread.is_alive():
             self._accept_thread.join()
         self._accept_thread = None
+
+        self._is_closing = False
 
     @property
     def address(self):
@@ -234,6 +258,7 @@ class Server:
                 self.connect_results[address] = result
                 node._respond_ok(session_id=b'\x00'*16)
             except BaseException:
+                self.close()
                 break
 
     @property

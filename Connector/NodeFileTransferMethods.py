@@ -10,7 +10,7 @@ def _write_to_file(self, data, file_name):
     self._request(self._get_session_id(), data=data, file_name=file_name)
 
 
-def _process__write_to_file(self, request):
+def _process__write_to_file(self, session_id, request):
     try:
         file_name = os.path.abspath(request["data"]["file_name"])
         if self._out_file is not None and self._out_file.name != file_name:
@@ -34,7 +34,7 @@ def _close_file(self):
     self._request(self._get_session_id())
 
 
-def _process__close_file(self, request):
+def _process__close_file(self, session_id, request):
     try:
         if self._out_file is not None:
             self._out_file.close()

@@ -42,6 +42,8 @@ def __init__(self, connection, server=None):
     self._queues = Queues(self)
     self._result_queues_for_future = Queues(self, private=True)
     self._recved_binary_queue = CloseableQueue()
+    self._is_closing = False
+    self._is_internal_closing = False
 
     if self._parent is None:
         self._local_vars = {}
@@ -99,20 +101,21 @@ def hold_on(self):
     threading.Event().wait()
 
 
-def close(self):
+def _close(self):
+    if self._is_internal_closing or self.is_closed:
+        return
+    
+    self._is_internal_closing = True
+    
+    self_address = self.address
+    try:
+        self._connection.close()
+    except BaseException:
+        pass
+
+    self._connection = None
+
     if self._parent is None:
-        try:
-            self._request(session_id=self._get_session_id())
-        except BaseException:
-            pass
-
-        try:
-            self._connection.close()
-        except BaseException:
-            pass
-
-        self._connection = None
-
         try:
             self._queue.close()
         except BaseException:
@@ -147,25 +150,18 @@ def close(self):
             self._actual_pipes.clear()
         except BaseException:
             pass
-
     else:
         try:
-            self._connection.close()
-        except BaseException:
-            pass
-
-        self._connection = None
-
-        try:
-            if self.address is not None:
+            if self_address is not None:
                 result = self._parent._callback_threads_pool.submit(
-                    self._parent._on_disconnected, self.address)
-                self._parent.disconnect_result[self.address] = result
+                    self._parent._on_disconnected, self_address
+                )
+                self._parent.disconnect_result[self_address] = result
         except BaseException:
             pass
 
         try:
-            self._parent._connected_nodes.pop(self.address)
+            self._parent._connected_nodes.pop(self_address)
         except BaseException:
             pass
 
@@ -192,6 +188,28 @@ def close(self):
         self._recved_responses.clear()
     except BaseException:
         pass
+
+    self._is_internal_closing = False
+
+
+def close(self):
+    if self._is_closing or self.is_closed:
+        return
+    
+    self._is_closing = True
+
+    try:
+        self._request(session_id=self._get_session_id())
+    except BaseException:
+        pass
+
+    self._close()
+
+    self._is_closing = False
+
+
+def _process_close(self, session_id, request):
+    self._close()
 
 
 def _get_session_id(self):
@@ -226,10 +244,6 @@ def _traceback(self, remote=True):
     exception_str += "".join(exception_list)
 
     return exception_str
-
-
-def _process_close(self, request):
-    self.close()
 
 
 def _send(self, session_id, type, value):
@@ -392,10 +406,11 @@ def _recving_loop(self):
     while True:
         try:
             recved_binary = self._connection.recv(self.recv_buffer)
-            self._recved_binary_queue.put(recved_binary)
         except BaseException:
-            self.close()
+            self._close()
             return
+        
+        self._recved_binary_queue.put(recved_binary)
 
 
 def _decoding_loop(self):
@@ -449,12 +464,13 @@ def _decoding_loop(self):
 def init_basic_methods(cls):
     cls.__init__ = __init__
     cls.__del__ = __del__
+    cls._close = _close
     cls.close = close
+    cls._process_close = _process_close
     cls.hold_on = hold_on
     cls._start = _start
     cls._get_session_id = _get_session_id
     cls._traceback = _traceback
-    cls._process_close = _process_close
     cls._send = _send
     cls._send_signal = _send_signal
     cls._request = _request
