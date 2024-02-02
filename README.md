@@ -8,10 +8,10 @@
 
 **Connector** only provide 2 classes for user to use: ``Server`` and ``Client``. And these two classes make everything easy. Let's getting start!
 
-In addition, You can:
+In addition, You can access:
 
-* find full documentation at: [https://connector.readthedocs.io/en/latest](https://connector.readthedocs.io/en/latest)
-* find PyPI index at: [https://pypi.org/project/tcp-connector](https://pypi.org/project/tcp-connector)
+* [Full Documentation](https://connector.readthedocs.io/en/latest)
+* [PyPI Index](https://pypi.org/project/tcp-connector)
 
 ## Release Note
 
